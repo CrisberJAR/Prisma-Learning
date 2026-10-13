@@ -1,6 +1,9 @@
 """Lista los modelos disponibles en Groq y Gemini y verifica los nombres configurados en .env.
 
-Uso: python scripts/check_models.py
+Uso:
+  python scripts/check_models.py            # solo compara contra la lista de modelos
+  python scripts/check_models.py --probar   # además hace una llamada mínima a cada modelo configurado
+                                            # (la lista puede incluir modelos que ya no se sirven: 404)
 """
 import sys
 from pathlib import Path
@@ -60,6 +63,31 @@ def check(provider, fetch, configured):
     return ok
 
 
+def probar_llamadas():
+    """Llamada mínima real a cada modelo de texto/visión configurado."""
+    from google import genai
+    from groq import Groq
+
+    print("\n== Prueba real (una llamada mínima por modelo) ==")
+    groq = Groq(api_key=settings.GROQ_API_KEY)
+    for var in ("MODEL_TEXT_PRIMARY", "MODEL_TEXT_FALLBACK"):
+        modelo = getattr(settings, var)
+        try:
+            groq.chat.completions.create(model=modelo, messages=[{"role": "user", "content": "Responde solo: OK"}], max_tokens=5)
+            print(f"  {var}={modelo!r}: responde")
+        except Exception as exc:
+            print(f"  {var}={modelo!r}: ERROR {str(exc)[:100]}")
+
+    gemini = genai.Client(api_key=settings.GEMINI_API_KEY)
+    for var in ("MODEL_VISION", "MODEL_LITE"):
+        modelo = getattr(settings, var)
+        try:
+            gemini.models.generate_content(model=modelo, contents="Responde solo: OK")
+            print(f"  {var}={modelo!r}: responde")
+        except Exception as exc:
+            print(f"  {var}={modelo!r}: ERROR {getattr(exc, 'code', '')} {str(exc)[:100]}")
+
+
 def main():
     groq_ok = check(
         "Groq",
@@ -78,6 +106,8 @@ def main():
             "MODEL_LITE": settings.MODEL_LITE,
         },
     )
+    if "--probar" in sys.argv:
+        probar_llamadas()
     sys.exit(0 if groq_ok and gemini_ok else 1)
 
 
