@@ -13,7 +13,18 @@ create table if not exists cursos (
   docente_id uuid not null references perfiles(id),
   nombre_curso text not null,
   descripcion text,
-  creado_en timestamptz default now()
+  nivel_educativo text,
+  nivel_educativo_etiqueta text,
+  creado_en timestamptz default now(),
+  constraint cursos_nivel_cine_check check (
+    nivel_educativo is null or nivel_educativo in (
+      'cine_1_inicial',
+      'cine_1_avanzada',
+      'cine_2',
+      'cine_3',
+      'cine_6'
+    )
+  )
 );
 
 create table if not exists inscripciones_curso (

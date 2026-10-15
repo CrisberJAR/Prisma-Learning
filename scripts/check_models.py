@@ -96,6 +96,7 @@ def main():
             "MODEL_TEXT_PRIMARY": settings.MODEL_TEXT_PRIMARY,
             "MODEL_TEXT_FALLBACK": settings.MODEL_TEXT_FALLBACK,
             "MODEL_STT": settings.MODEL_STT,
+            "MODEL_STT_FALLBACK": settings.MODEL_STT_FALLBACK,
         },
     )
     gemini_ok = check(
