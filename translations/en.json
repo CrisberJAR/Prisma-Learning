@@ -99,6 +99,7 @@
  "Cópialos ahora: por seguridad no se vuelven a mostrar. Al entrar por primera vez, el sistema le pedirá crear su propia contraseña. Si la pierde, usa «Restablecer contraseña» en la pestaña Estudiantes.": "Copy them now: for security they will not be shown again. On first sign-in the system will ask the student to create their own password. If they lose it, use “Reset password” in the Students tab.",
  "Datos de acceso del estudiante": "Student sign-in details",
  "Debilidades": "Weaknesses",
+ "Demasiados intentos de inicio de sesión. Espera unos minutos y vuelve a intentarlo.": "Too many sign-in attempts. Wait a few minutes and try again.",
  "Descartar y empezar de nuevo": "Discard and start over",
  "Descripción (opcional)": "Description (optional)",
  "Detener": "Stop",

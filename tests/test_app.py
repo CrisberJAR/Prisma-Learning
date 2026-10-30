@@ -35,8 +35,16 @@ def test_cliente_supabase_desactiva_http2():
         cliente.close()
 
 
-def test_health_config_lists_missing_vars():
-    client = create_app().test_client()
-    resp = client.get("/health/config")
+def test_health_config_lists_missing_vars(monkeypatch):
+    """La lista de variables faltantes solo la ve un docente; el público solo recibe ok."""
+    assert set(create_app().test_client().get("/health/config").get_json()) == {"ok"}
+    from flask import g
+
+    def fake():
+        g.usuario = {"id": "d1", "rol": "docente", "nombre": "Doc", "email": "d@x.com", "token": "t"}
+        return g.usuario
+
+    monkeypatch.setattr("services.auth.usuario_actual", fake)
+    resp = create_app().test_client().get("/health/config")
     assert resp.status_code == 200
     assert isinstance(resp.get_json()["faltantes"], list)

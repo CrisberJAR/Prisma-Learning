@@ -99,6 +99,7 @@
  "Cópialos ahora: por seguridad no se vuelven a mostrar. Al entrar por primera vez, el sistema le pedirá crear su propia contraseña. Si la pierde, usa «Restablecer contraseña» en la pestaña Estudiantes.": "Copiez-les maintenant : pour des raisons de sécurité, ils ne seront plus affichés. À la première connexion, le système demandera à l'élève de créer son propre mot de passe. S'il le perd, utilisez « Réinitialiser le mot de passe » dans l'onglet Élèves.",
  "Datos de acceso del estudiante": "Identifiants de l'élève",
  "Debilidades": "Points faibles",
+ "Demasiados intentos de inicio de sesión. Espera unos minutos y vuelve a intentarlo.": "Trop de tentatives de connexion. Patientez quelques minutes et réessayez.",
  "Descartar y empezar de nuevo": "Abandonner et recommencer",
  "Descripción (opcional)": "Description (facultatif)",
  "Detener": "Arrêter",

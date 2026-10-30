@@ -2,6 +2,7 @@ from urllib.parse import urlparse
 
 from flask import Flask, jsonify, redirect, url_for
 from markupsafe import Markup
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 import httpx
 
@@ -22,7 +23,16 @@ def icono(nombre: str, clase: str = "") -> Markup:
 
 def create_app(con_worker: bool | None = None):
     app = Flask(__name__)
+    produccion = settings.ENTORNO == "produccion"
+    if produccion and not settings.FLASK_SECRET_KEY:
+        # Con la clave de desarrollo cualquiera podría firmar cookies de sesión válidas.
+        raise RuntimeError("Falta FLASK_SECRET_KEY: en producción es obligatoria.")
     app.config["SECRET_KEY"] = settings.FLASK_SECRET_KEY or "dev-only-secret"
+    if produccion:
+        # Detrás del proxy HTTPS de la plataforma: esquema, host e IP reales del cliente
+        # (los usan la cookie Secure, la comprobación CSRF por Origin y el límite de login).
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+        app.config["SESSION_COOKIE_SECURE"] = True
     app.config["MAX_CONTENT_LENGTH"] = settings.MAX_UPLOAD_MB * 1024 * 1024
     # Lax: el navegador no manda la cookie de sesión en POST que vienen de otros sitios (CSRF).
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -117,12 +127,22 @@ def create_app(con_worker: bool | None = None):
 
     @app.get("/health/config")
     def health_config():
-        return jsonify({"faltantes": settings.missing()})
+        """Público: solo si la configuración está completa. El detalle, solo para docentes."""
+        from flask import g
+
+        faltantes = settings.missing()
+        if (getattr(g, "usuario", None) or {}).get("rol") == "docente":
+            return jsonify({"ok": not faltantes, "faltantes": faltantes})
+        return jsonify({"ok": not faltantes})
 
     @app.get("/health/ia")
     def health_ia():
+        from flask import g
+
         from services import ai_router
 
+        if (getattr(g, "usuario", None) or {}).get("rol") != "docente":
+            return jsonify({"error": "No autenticado"}), 401
         return jsonify(ai_router.resumen_uso())
 
     @app.errorhandler(413)

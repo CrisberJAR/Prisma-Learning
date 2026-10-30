@@ -25,6 +25,13 @@ def entrar_post():
         flash(_("Escribe correo y contraseña."), "error")
         return render_template("auth/entrar.html"), 400
     try:
+        # Contra fuerza bruta: por IP (muchas cuentas) y por correo (una cuenta desde muchas IP).
+        rate_limit.comprobar(f"login-ip:{request.remote_addr}", 20, ventana_s=300)
+        rate_limit.comprobar(f"login-email:{email.lower()}", 8, ventana_s=300)
+    except rate_limit.DemasiadoRapido:
+        flash(_("Demasiados intentos de inicio de sesión. Espera unos minutos y vuelve a intentarlo."), "error")
+        return render_template("auth/entrar.html"), 429
+    try:
         tokens = cuentas.iniciar_sesion(email, password)
     except Exception:
         flash(_("No se pudo iniciar sesión. Revisa el correo y la contraseña."), "error")
