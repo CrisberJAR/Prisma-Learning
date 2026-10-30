@@ -33,6 +33,11 @@
       return r.json();
     })
     .then(function (j) {
+      var cajaPrompt = document.getElementById("img-edu-prompt");
+      if (cajaPrompt && j && j.prompt_ingles) {
+        document.getElementById("img-edu-prompt-texto").textContent = j.prompt_ingles;
+        cajaPrompt.hidden = false;
+      }
       if (j && j.url) {
         mostrar(j.url, j.alt);
         return;

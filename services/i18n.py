@@ -35,6 +35,13 @@ ETIQUETAS = {
     "failed": "Falló",
     "extraer": "Extracción",
     "formato": "Formato",
+    "borrador": "Borrador",
+    "enviado": "Enviado",
+    "evaluado": "Evaluado",
+    "avanzado": "Avanzado",
+    "satisfactorio": "Satisfactorio",
+    "en_proceso": "En proceso",
+    "inicial": "Inicial",
 }
 
 # Llamadas a traducir en el código: _("..."), t("...") en JS. Lo usa el extractor y el test.
@@ -111,10 +118,11 @@ def claves_js() -> frozenset[str]:
 
 def claves_dinamicas() -> set[str]:
     """Textos que se traducen como variable (_(n.etiqueta)): el extractor no los ve en el código."""
-    from services import cursos, dua, mediacion, package_builder
+    from services import cursos, dua, ejercicios, mediacion, package_builder
 
     claves = set(ETIQUETAS.values()) | {dua.MSG_IDIOMA_INVALIDO}
     claves |= {mediacion.PAUTA_LOCAL_DOCENTE, mediacion.PAUTA_LOCAL_ESTUDIANTE}
+    claves.update(ejercicios.NOMBRES_TIPO.values())
     claves.update(n["etiqueta"] for n in dua.NECESIDADES)
     claves.update(n["ayuda"] for n in dua.NECESIDADES)
     claves.update(l["etiqueta"] for l in dua.LENGUAS)

@@ -16,6 +16,19 @@
       {% include "_mediacion.html" %}
       <div id="dua-preview" class="dua-preview" aria-live="polite"></div>
     </article>
+    {% if ejercicios_estado %}
+    <article class="glass caja" aria-labelledby="t-ejercicios">
+      <h2 id="t-ejercicios">{{ _("Ejercicios de la sesión") }}</h2>
+      {% if ejercicios_estado.intento %}
+        {% set it = ejercicios_estado.intento %}
+        <p>{% if it.puntaje is not none %}{{ _("Ya los resolviste: obtuviste {p}%.", p=it.puntaje | round | int) }}{% else %}{{ _("Ya enviaste tus respuestas.") }}{% endif %}</p>
+        <p><a class="btn" href="{{ url_for('estudiante.resolver_ejercicios', sesion_id=sesion.id) }}">{{ _("Ver mi resultado") }}</a></p>
+      {% else %}
+        <p>{{ _("Tu docente preparó {n} ejercicios para comprobar lo que aprendiste.", n=ejercicios_estado.n) }}</p>
+        <p><a class="btn p" href="{{ url_for('estudiante.resolver_ejercicios', sesion_id=sesion.id) }}">{{ _("Resolver ejercicios") }}</a></p>
+      {% endif %}
+    </article>
+    {% endif %}
   </div>
 
   <div class="sticky sesion-lateral">

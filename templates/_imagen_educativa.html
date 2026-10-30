@@ -4,4 +4,11 @@
   <figure class="img-edu-figura">
     <img id="img-edu" alt="{{ _('Imagen educativa del tema') }}" width="1024" height="576" hidden>
   </figure>
+  {% if rol_mediacion == 'docente' %}
+  <details class="gestion" id="img-edu-prompt" hidden>
+    <summary>{{ _("Ver prompt de la imagen") }}</summary>
+    <p class="mut">{{ _("Texto exacto enviado al modelo de imagen (FLUX). Lo redacta la IA a partir del tema y el nivel del curso.") }}</p>
+    <pre class="texto prompt" id="img-edu-prompt-texto"></pre>
+  </details>
+  {% endif %}
 </article>

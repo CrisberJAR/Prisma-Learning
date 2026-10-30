@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Informe") }} · {{ estudiante.nombre or '' }} · Prisma{% endblock %}
+{% block contenido %}
+<p><a class="btn" href="{{ url_for('panel.sesion', sesion_id=sesion.id, pestana='resultados') }}#resultados">← {{ _("Volver a los resultados") }}</a></p>
+<section class="glass caja">
+  <h1>{{ _("Informe de aprendizaje") }}</h1>
+  <p class="mut">{{ estudiante.nombre or '' }}{% if estudiante.email %} · {{ estudiante.email }}{% endif %} · {{ sesion.titulo }}</p>
+  <div class="g2">
+    <p class="chip">{{ _("Puntaje") }}: {% if respuesta.puntaje is not none %}{{ respuesta.puntaje | round | int }}%{% else %}—{% endif %}</p>
+    {% if nivel %}<p class="chip nivel-{{ nivel }}">{{ _("Nivel de comprensión") }}: {{ nivel | etiqueta }}</p>{% endif %}
+  </div>
+  {% if respuesta.estado == 'error' %}
+    <p class="aviso err" role="alert">{{ _("La IA no pudo terminar la evaluación. Las preguntas cerradas ya están corregidas; reevalúa para obtener el diagnóstico y la nota de las abiertas.") }}</p>
+  {% endif %}
+  <div class="acciones">
+    <form method="post" action="{{ url_for('panel.reevaluar', respuesta_id=respuesta.id) }}">
+      <button class="btn {{ 'p' if respuesta.estado == 'error' else '' }}" type="submit">{{ _("Reevaluar con IA") }}</button>
+    </form>
+    <form method="post" action="{{ url_for('panel.permitir_reintento', respuesta_id=respuesta.id) }}" data-confirmar="{{ _('¿Borrar este intento para que el estudiante vuelva a resolver? Se pierde este informe.') }}">
+      <button class="btn d" type="submit">{{ _("Permitir un nuevo intento") }}</button>
+    </form>
+  </div>
+</section>
+
+{% if informe %}
+<section class="glass caja">
+  <h2>{{ _("Diagnóstico") }}</h2>
+  <p>{{ informe.diagnostico }}</p>
+  <div class="g2">
+    <div>
+      <h3>{{ _("Puntos fuertes") }}</h3>
+      {% if informe.fortalezas %}<ul>{% for x in informe.fortalezas %}<li>{{ x }}</li>{% endfor %}</ul>{% else %}<p class="mut">—</p>{% endif %}
+    </div>
+    <div>
+      <h3>{{ _("Debilidades") }}</h3>
+      {% if informe.debilidades %}<ul>{% for x in informe.debilidades %}<li>{{ x }}</li>{% endfor %}</ul>{% else %}<p class="mut">—</p>{% endif %}
+    </div>
+  </div>
+  <h3>{{ _("Qué reforzar con este estudiante") }}</h3>
+  {% if informe.recomendaciones %}<ol>{% for x in informe.recomendaciones %}<li>{{ x }}</li>{% endfor %}</ol>{% else %}<p class="mut">—</p>{% endif %}
+  <p class="mut"><span class="ia">IA</span> {{ _("Informe generado con IA a partir de las respuestas. Úsalo como apoyo a tu criterio docente.") }}</p>
+</section>
+{% endif %}
+
+<section class="glass caja">
+  <h2>{{ _("Respuestas, ejercicio por ejercicio") }}</h2>
+  <ol class="lista">
+    {% for it, r in filas %}
+    <li>
+      <p><b>{{ it.enunciado }}</b> <small class="mut">({{ _(tipos_ejercicio[it.tipo]) }})</small></p>
+      <p>{{ _("Respuesta del estudiante") }}:
+        {% if r.respuesta is none or r.respuesta == '' %}<i>{{ _("sin responder") }}</i>
+        {% elif it.tipo == 'opcion_multiple' %}{{ it.opciones[r.respuesta] }}
+        {% elif it.tipo == 'verdadero_falso' %}{{ _("Verdadero") if r.respuesta else _("Falso") }}
+        {% else %}{{ r.respuesta }}{% endif %}
+      </p>
+      <p class="mut">{{ _("Respuesta esperada") }}:
+        {% if it.tipo == 'opcion_multiple' %}{{ it.opciones[it.correcta] }}
+        {% elif it.tipo == 'verdadero_falso' %}{{ _("Verdadero") if it.correcta else _("Falso") }}
+        {% else %}{{ it.correcta }}{% endif %}
+      </p>
+      <p>
+        {% if r.puntaje is none %}<span class="chip w">{{ _("Pendiente") }}</span>
+        {% elif r.puntaje >= 1 %}<span class="chip ok">{{ _("Correcta") }}</span>
+        {% elif r.puntaje > 0 %}<span class="chip w">{{ _("Parcial ({p}%)", p=(r.puntaje * 100) | round | int) }}</span>
+        {% else %}<span class="chip">{{ _("Incorrecta") }}</span>{% endif %}
+      </p>
+      {% if r.comentario %}<p class="mut">{{ _("Comentario mostrado al estudiante") }}: {{ r.comentario }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/filtro.js') }}" defer></script>{% endblock %}

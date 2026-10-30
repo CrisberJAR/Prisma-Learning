@@ -1,0 +1,55 @@
+<section class="glass caja" id="panel-resultados" role="tabpanel" aria-labelledby="tab-resultados">
+  <h2 id="resultados">{{ _("Resultados de los estudiantes") }}</h2>
+  {% if not resultados.total %}
+    <div class="empty">
+      <div class="o"></div>
+      <b>{{ _("Aún no hay respuestas") }}</b>
+      {{ _("Cuando los estudiantes resuelvan los ejercicios publicados, verás aquí su diagnóstico.") }}
+    </div>
+  {% else %}
+    <div class="g2">
+      <p class="chip">{{ _("{n} respuestas", n=resultados.total) }}</p>
+      {% if resultados.promedio is not none %}<p class="chip">{{ _("Promedio: {p}%", p=resultados.promedio) }}</p>{% endif %}
+    </div>
+
+    <h3>{{ _("Estudiantes") }}</h3>
+    <div class="tabla-envoltura">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col">{{ _("Estudiante") }}</th>
+            <th scope="col">{{ _("Puntaje") }}</th>
+            <th scope="col">{{ _("Nivel de comprensión") }}</th>
+            <th scope="col"><span class="sr-only">{{ _("Acciones") }}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in resultados.estudiantes %}
+          <tr>
+            <td>{{ e.nombre }}{% if e.email %}<br><small class="mut">{{ e.email }}</small>{% endif %}</td>
+            <td>{% if e.puntaje is not none %}{{ e.puntaje | round | int }}%{% else %}—{% endif %}</td>
+            <td>
+              {% if e.estado == 'error' %}<span class="chip w">{{ _("Evaluación pendiente") }}</span>
+              {% elif e.nivel %}<span class="chip nivel-{{ e.nivel }}">{{ e.nivel | etiqueta }}</span>{% endif %}
+            </td>
+            <td><a class="btn" href="{{ url_for('panel.informe', respuesta_id=e.id) }}">{{ _("Ver informe") }}</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if resultados.por_ejercicio %}
+    <h3>{{ _("Ejercicios con más dificultad") }}</h3>
+    <ul class="lista">
+      {% for e in resultados.por_ejercicio[:5] %}
+      <li>
+        <p>{{ e.enunciado }}</p>
+        <div class="bar" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ e.pct }}" aria-label="{{ _('Aciertos: {p}%', p=e.pct) }}"><i style="width: {{ e.pct }}%"></i></div>
+        <p class="mut">{{ _("Aciertos: {p}% de {n} respuestas", p=e.pct, n=e.total) }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  {% endif %}
+</section>
