@@ -6,36 +6,45 @@
   <title>{{ _("Entrar") }} · Prisma</title>
   {% include "_fuentes.html" %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-  <meta name="theme-color" content="#0b1437">
+  <meta name="theme-color" content="#2563eb">
 </head>
 <body class="pagina-auth">
   {% include "_iconos.html" %}
   <a class="skip" href="#contenido">{{ _("Saltar al contenido") }}</a>
-  <div class="auth">
-    <aside class="auth-marca" aria-labelledby="auth-lema">
-      <p class="marca"><svg class="logo" aria-hidden="true"><use href="#i-logo"></use></svg>Prisma</p>
-      <div>
-        <h2 id="auth-lema">{{ _("Aprende a tu manera.") }}</h2>
-        <p>{{ _("Clases accesibles con Diseño Universal para el Aprendizaje, en tu idioma y con apoyo de IA.") }}</p>
-        <ul class="auth-puntos">
-          <li><span class="ico-tile">{{ icono('sliders') }}</span>{{ _("Formatos DUA combinables: audio, contraste, lectura fácil y más") }}</li>
-          <li><span class="ico-tile">{{ icono('globe') }}</span>{{ _("Interfaz y contenido en español, inglés, portugués y francés") }}</li>
-          <li><span class="ico-tile">{{ icono('sparkles') }}</span>{{ _("Ejercicios con IA y retroalimentación al instante") }}</li>
-          <li><span class="ico-tile">{{ icono('chart') }}</span>{{ _("Informes de aprendizaje para cada estudiante") }}</li>
-        </ul>
+  <div class="auth-page">
+    <aside class="auth-brand-panel" aria-labelledby="auth-lema">
+      <p class="marca"><span class="logo-mark" aria-hidden="true"><span></span><span></span><span></span></span>Prisma</p>
+
+      <div class="auth-copy">
+        <p class="eyebrow light">{{ _("Educación accesible para todos") }}</p>
+        <h2 id="auth-lema">{{ _("Transforma tus materiales.") }}<br>{{ _("Multiplica las formas de aprender.") }}</h2>
+        <p>{{ _("Adapta contenidos educativos a las necesidades de cada estudiante en pocos minutos.") }}</p>
       </div>
-      <p class="auth-pie">{{ icono('shield') }} <a href="{{ url_for('privacidad') }}">{{ _("Privacidad y datos personales") }}</a></p>
+
+      <div class="auth-orbit" aria-hidden="true">
+        <div class="orbit-card oc-1">Aa</div>
+        <div class="orbit-card oc-2">👁</div>
+        <div class="orbit-card oc-3">▶</div>
+        <div class="orbit-center">✨</div>
+      </div>
+
+      <p class="auth-quote">“{{ _("La accesibilidad no es un extra, es el punto de partida.") }}”</p>
     </aside>
 
-    <main id="contenido" class="auth-form" tabindex="-1">
-      <div class="auth-tarjeta">
+    <main id="contenido" class="auth-form-panel" tabindex="-1">
+      <div class="auth-form">
         <div class="row">
-          <p class="marca solo-movil"><svg class="logo" aria-hidden="true"><use href="#i-logo"></use></svg>Prisma</p>
+          <p class="marca solo-movil"><span class="logo-mark" aria-hidden="true"><span></span><span></span><span></span></span>Prisma</p>
           <span class="sp"></span>
           {% with sufijo='entrar' %}{% include "_selector_idioma.html" %}{% endwith %}
         </div>
-        <h1>{{ _("Entrar a Prisma") }}</h1>
-        <p class="mut">{{ _("Materiales de clase en formatos que puedes combinar, para docentes y estudiantes.") }}</p>
+
+        <header>
+          <p class="eyebrow">{{ _("Bienvenido de nuevo") }}</p>
+          <h1>{{ _("Entrar a Prisma") }}</h1>
+          <p class="mut">{{ _("Continúa creando experiencias de aprendizaje inclusivas.") }}</p>
+        </header>
+
         {% with mensajes = get_flashed_messages(with_categories=true) %}
           {% if mensajes %}
             {% for cat, msg in mensajes %}
@@ -43,14 +52,21 @@
             {% endfor %}
           {% endif %}
         {% endwith %}
-        <form method="post" action="{{ url_for('auth.entrar_post') }}">
-          <label for="email">{{ _("Correo") }}</label>
-          <div class="campo-ico">{{ icono('user') }}<input id="email" name="email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
-          <label for="password">{{ _("Contraseña") }}</label>
-          <div class="campo-ico">{{ icono('lock') }}<input id="password" name="password" type="password" autocomplete="current-password" spellcheck="false" required></div>
-          <p><button class="btn p ancho" type="submit">{{ icono('log-in') }}{{ _("Entrar") }}</button></p>
+
+        <form class="auth-campos" method="post" action="{{ url_for('auth.entrar_post') }}">
+          <div class="field">
+            <label for="email">{{ _("Correo institucional") }}</label>
+            <input id="email" name="email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="nombre@centro.edu" required>
+          </div>
+          <div class="field">
+            <label for="password">{{ _("Contraseña") }}</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" spellcheck="false" placeholder="••••••••" required>
+          </div>
+          <button class="btn btn-primary full" type="submit">{{ _("Acceso institucional") }}</button>
         </form>
+
         <p class="mut auth-ayuda">{{ icono('info') }} {{ _("¿Eres estudiante? Tu docente te entrega el correo y una contraseña temporal.") }}</p>
+        <p class="auth-legal">{{ icono('shield') }} <a href="{{ url_for('privacidad') }}">{{ _("Privacidad y datos personales") }}</a></p>
       </div>
     </main>
   </div>
