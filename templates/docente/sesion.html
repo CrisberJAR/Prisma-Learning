@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}{{ sesion.titulo }} · Prisma{% endblock %}
 {% block contenido %}
-<p><a class="btn" href="{{ url_for('panel.curso', curso_id=sesion.curso_id) }}">← {{ _("Volver al curso") }}</a></p>
+<p><a class="btn" href="{{ url_for('panel.curso', curso_id=sesion.curso_id) }}">{{ icono('arrow-left') }}{{ _("Volver al curso") }}</a></p>
 <section class="glass caja">
   <div class="row">
     <div>
-      <h1>{{ sesion.titulo }}</h1>
+      <div class="titulo"><span class="ico-tile">{{ icono('file') }}</span><h1>{{ sesion.titulo }}</h1></div>
       <p>
         {% set chip_estado = 'ok' if sesion.estado == 'publicado' else ('w' if sesion.estado in ['revision', 'procesando'] else '') %}
         <span class="chip {{ chip_estado }}">{{ sesion.estado | etiqueta }}</span>
@@ -17,12 +17,12 @@
     </div>
     {% if sesion.estado == 'revision' %}
       <form method="post" action="{{ url_for('panel.publicar', sesion_id=sesion.id) }}">
-        <button class="btn p" type="submit">{{ _("Publicar para estudiantes inscritos") }}</button>
+        <button class="btn p" type="submit">{{ icono('send') }}{{ _("Publicar para estudiantes inscritos") }}</button>
       </form>
     {% endif %}
   </div>
   <details class="gestion">
-    <summary>{{ _("Editar sesión") }}</summary>
+    <summary>{{ icono('pencil') }}{{ _("Editar sesión") }}</summary>
     <form method="post" action="{{ url_for('panel.editar_sesion', sesion_id=sesion.id) }}">
       <p>
         <label for="ed-titulo">{{ _("Título de la sesión") }}</label>
@@ -39,19 +39,22 @@
     </form>
   </details>
   <details class="gestion peligro">
-    <summary>{{ _("Eliminar sesión") }}</summary>
+    <summary>{{ icono('trash') }}{{ _("Eliminar sesión") }}</summary>
     <form method="post" action="{{ url_for('panel.eliminar_sesion', sesion_id=sesion.id) }}">
       <p class="aviso err">{{ _("Se borrarán la sesión, sus formatos DUA, las dudas del tutor y el progreso de los estudiantes. No se puede deshacer.") }}</p>
       <p><label><input type="checkbox" name="confirmar" value="si" required> {{ _("Entiendo que esta acción es definitiva") }}</label></p>
-      <p><button class="btn d" type="submit">{{ _("Eliminar sesión") }}</button></p>
+      <p><button class="btn d" type="submit">{{ icono('trash') }}{{ _("Eliminar sesión") }}</button></p>
     </form>
   </details>
 </section>
 
+{% set pestana = request.args.get('pestana', 'texto') %}
 <div class="tabs glass" role="tablist">
-  <button type="button" role="tab" id="tab-texto" aria-controls="panel-texto" aria-selected="true">{{ _("Texto") }}</button>
-  <button type="button" role="tab" id="tab-formatos" aria-controls="panel-formatos" aria-selected="false">{{ _("Formatos DUA") }}</button>
-  <button type="button" role="tab" id="tab-procesos" aria-controls="panel-procesos" aria-selected="false">{{ _("Procesos y dudas") }}</button>
+  <button type="button" role="tab" id="tab-texto" aria-controls="panel-texto" aria-selected="{{ 'true' if pestana == 'texto' else 'false' }}">{{ icono('file') }}{{ _("Texto") }}</button>
+  <button type="button" role="tab" id="tab-formatos" aria-controls="panel-formatos" aria-selected="false">{{ icono('sliders') }}{{ _("Formatos DUA") }}</button>
+  <button type="button" role="tab" id="tab-ejercicios" aria-controls="panel-ejercicios" aria-selected="{{ 'true' if pestana == 'ejercicios' else 'false' }}">{{ icono('clipboard') }}{{ _("Ejercicios") }}</button>
+  <button type="button" role="tab" id="tab-resultados" aria-controls="panel-resultados" aria-selected="{{ 'true' if pestana == 'resultados' else 'false' }}">{{ icono('chart') }}{{ _("Resultados") }}{% if resultados.total %} ({{ resultados.total }}){% endif %}</button>
+  <button type="button" role="tab" id="tab-procesos" aria-controls="panel-procesos" aria-selected="false">{{ icono('activity') }}{{ _("Procesos y dudas") }}</button>
 </div>
 
 <section class="glass caja" id="panel-texto" role="tabpanel" aria-labelledby="tab-texto">
@@ -81,6 +84,9 @@
   </div>
 </section>
 
+{% include "docente/_ejercicios.html" %}
+{% include "docente/_resultados.html" %}
+
 <section class="glass caja" id="panel-procesos" role="tabpanel" aria-labelledby="tab-procesos">
   <h2 id="jobs">{{ _("Procesos en segundo plano") }}</h2>
   {% if jobs %}
@@ -94,7 +100,7 @@
           {% if j.error %}<p class="aviso err">{{ j.error }}</p>{% endif %}
           {% if j.estado == 'failed' %}
             <form method="post" action="{{ url_for('panel.reintentar', job_id=j.id) }}">
-              <button class="btn p" type="submit">{{ _("Reintentar") }}</button>
+              <button class="btn p" type="submit">{{ icono('refresh') }}{{ _("Reintentar") }}</button>
             </form>
           {% endif %}
         </li>
@@ -102,13 +108,13 @@
     </ul>
   {% else %}
     <div class="empty">
-      <div class="o"></div>
+      <div class="o">{{ icono('activity') }}</div>
       <b>{{ _("No hay procesos todavía") }}</b>
       {{ _("Aquí verás la extracción u otros procesos en segundo plano.") }}
     </div>
   {% endif %}
 
-  <h2 id="dudas">{{ _("Dudas enviadas por estudiantes") }}</h2>
+  <h2 id="dudas" class="titulo">{{ icono('help') }} {{ _("Dudas enviadas por estudiantes") }}</h2>
   {% if dudas %}
     <ul class="lista">
       {% for d in dudas %}
@@ -125,6 +131,8 @@
 <script src="{{ url_for('static', filename='js/imagen_edu.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/mediacion.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/dua.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/ejercicios.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/filtro.js') }}" defer></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     var nodo = document.getElementById("dua-texto");

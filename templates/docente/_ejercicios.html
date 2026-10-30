@@ -1,0 +1,80 @@
+<section class="glass caja" id="panel-ejercicios" role="tabpanel" aria-labelledby="tab-ejercicios">
+  <div class="row">
+    <div>
+      <div class="titulo"><span class="ico-tile">{{ icono('clipboard') }}</span><h2 id="ejercicios">{{ _("Ejercicios de la sesión") }}</h2></div>
+      <p class="mut">{{ _("La IA propone ejercicios según el tema y el nivel del curso. Revísalos, edítalos y publícalos cuando estén listos.") }}</p>
+    </div>
+    {% if conjunto %}
+    <p>
+      {% set chip_e = 'ok' if conjunto.estado == 'publicado' else 'w' %}
+      <span class="chip {{ chip_e }}">{{ conjunto.estado | etiqueta }}</span>
+      <span class="chip">{{ _("Versión {n}", n=conjunto.version) }}</span>
+      {% if conjunto.editado_por_docente %}<span class="chip">{{ _("Editado por ti") }}</span>{% elif conjunto.generado_por_ia %}<span class="ia">IA</span>{% endif %}
+    </p>
+    {% endif %}
+  </div>
+
+  {% if not sesion.texto_extraido %}
+    <p class="aviso">{{ _("Cuando la sesión tenga texto podrás generar ejercicios.") }}</p>
+  {% else %}
+  <details class="gestion" {% if not conjunto or not conjunto.items %}open{% endif %}>
+    <summary>{{ icono('sparkles') }}{% if conjunto and conjunto.items %}{{ _("Re-generar con IA") }}{% else %}{{ _("Generar ejercicios con IA") }}{% endif %}</summary>
+    <form method="post" action="{{ url_for('panel.generar_ejercicios', sesion_id=sesion.id) }}" data-esperando="{{ _('La IA está preparando los ejercicios… puede tardar unos segundos.') }}">
+      <div class="g2">
+        <p>
+          <label for="ej-cantidad">{{ _("Cantidad de ejercicios") }}</label>
+          <input id="ej-cantidad" name="cantidad" type="number" min="1" max="{{ cantidad_max }}" value="{{ cantidad_defecto }}" required>
+        </p>
+        <fieldset>
+          <legend>{{ _("Tipos de ejercicio") }}</legend>
+          {% for codigo, nombre in tipos_ejercicio.items() %}
+          <label class="chk"><input type="checkbox" name="tipos" value="{{ codigo }}" checked> {{ _(nombre) }}</label>
+          {% endfor %}
+        </fieldset>
+      </div>
+      {% if conjunto and conjunto.items %}
+      <p class="aviso">{{ _("Re-generar reemplaza los ejercicios actuales y los deja en borrador. Las respuestas ya enviadas por estudiantes se conservan con sus preguntas originales.") }}</p>
+      <p><label class="chk"><input type="checkbox" name="confirmar" value="si" required> {{ _("Reemplazar los ejercicios actuales") }}</label></p>
+      {% endif %}
+      <p><button class="btn p" type="submit">{{ icono('sparkles') }}{% if conjunto and conjunto.items %}{{ _("Re-generar") }}{% else %}{{ _("Generar") }}{% endif %}</button></p>
+    </form>
+  </details>
+  {% endif %}
+
+  {% if conjunto and conjunto.prompt %}
+  <details class="gestion">
+    <summary>{{ icono('eye') }}{{ _("Ver prompt") }}</summary>
+    <p class="mut">{{ _("Este es el texto exacto que se envió a la IA para generar estos ejercicios.") }}{% if conjunto.modelo %} {{ _("Modelo: {m}", m=conjunto.modelo) }}{% endif %}</p>
+    <pre class="texto prompt">{{ conjunto.prompt }}</pre>
+  </details>
+  {% endif %}
+
+  {% if conjunto and conjunto.items %}
+  {% if conjunto.estado == 'publicado' and resultados.total %}
+    <p class="aviso">{{ _("Ya hay {n} respuestas. Si editas, los nuevos intentos usarán la versión nueva; las respuestas enviadas conservan sus preguntas.", n=resultados.total) }}</p>
+  {% endif %}
+  <form method="post" action="{{ url_for('panel.guardar_ejercicios', sesion_id=sesion.id) }}" id="form-ejercicios">
+    <input type="hidden" name="items_json" id="items-json">
+    <noscript><p class="aviso err">{{ _("Para editar los ejercicios necesitas JavaScript activado.") }}</p></noscript>
+    <div id="editor-ejercicios" aria-live="polite"></div>
+    <p class="acciones">
+      <button class="btn" type="button" id="btn-agregar-ejercicio">{{ icono('plus') }}{{ _("Agregar ejercicio") }}</button>
+      <button class="btn p" type="submit">{{ icono('check') }}{{ _("Guardar cambios") }}</button>
+      <span id="estado-editor" class="mut" role="status"></span>
+    </p>
+  </form>
+  <script type="application/json" id="ejercicios-datos">{{ {"items": conjunto["items"], "tipos": tipos_ejercicio_ui} | tojson }}</script>
+
+  <div class="acciones">
+    {% if conjunto.estado == 'publicado' %}
+    <form method="post" action="{{ url_for('panel.despublicar_ejercicios', sesion_id=sesion.id) }}" data-confirmar="{{ _('¿Retirar los ejercicios? Los estudiantes dejarán de verlos.') }}">
+      <button class="btn" type="submit">{{ icono('eye-off') }}{{ _("Retirar de los estudiantes") }}</button>
+    </form>
+    {% else %}
+    <form method="post" action="{{ url_for('panel.publicar_ejercicios', sesion_id=sesion.id) }}">
+      <button class="btn p" type="submit">{{ icono('send') }}{{ _("Publicar ejercicios para los estudiantes") }}</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>

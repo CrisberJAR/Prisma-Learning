@@ -1,0 +1,80 @@
+{% extends "estudiante/base.html" %}
+{% block title %}{{ _("Ejercicios") }} · {{ titulo }} · Prisma{% endblock %}
+{% block contenido %}
+<p><a class="btn" href="{{ url_for('estudiante.sesion', sesion_id=sesion.id) }}">{{ icono('arrow-left') }}{{ _("Volver a la clase") }}</a></p>
+
+{% if not intento %}
+<section class="glass caja">
+  <div class="titulo"><span class="ico-tile">{{ icono('clipboard') }}</span><h1>{{ _("Ejercicios") }} · {{ titulo }}</h1></div>
+  <p class="mut">{{ _("Responde con calma. Tienes un solo intento: al enviar, verás tu resultado y una explicación de cada ejercicio.") }}</p>
+</section>
+<form method="post" id="form-resolver" data-esperando="{{ _('Evaluando tus respuestas… puede tardar unos segundos.') }}">
+  <ol class="ejercicios-lista">
+    {% for it in items %}
+    <li class="glass caja ejercicio">
+      {% if it.tipo == 'abierta' %}
+        <p><label for="r_{{ it.id }}"><b>{{ it.enunciado }}</b></label></p>
+        <textarea id="r_{{ it.id }}" name="r_{{ it.id }}" rows="4" maxlength="3000"></textarea>
+      {% else %}
+        <fieldset>
+          <legend><b>{{ it.enunciado }}</b></legend>
+          {% if it.tipo == 'opcion_multiple' %}
+            {% for op in it.opciones %}
+            <p><label class="chk"><input type="radio" name="r_{{ it.id }}" value="{{ loop.index0 }}"> {{ op }}</label></p>
+            {% endfor %}
+          {% else %}
+            <p><label class="chk"><input type="radio" name="r_{{ it.id }}" value="true"> {{ _("Verdadero") }}</label></p>
+            <p><label class="chk"><input type="radio" name="r_{{ it.id }}" value="false"> {{ _("Falso") }}</label></p>
+          {% endif %}
+        </fieldset>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  <p class="acciones"><button class="btn p" type="submit">{{ icono('send') }}{{ _("Enviar respuestas") }}</button></p>
+</form>
+
+{% else %}
+<section class="glass caja">
+  <div class="titulo"><span class="ico-tile ok">{{ icono('award') }}</span><h1>{{ _("Tu resultado") }} · {{ titulo }}</h1></div>
+  {% if intento.puntaje is not none %}
+    {% set p = intento.puntaje | round | int %}
+    <div class="resultado">
+      <div class="anillo nivel-{{ nivel }}" style="--valor:{{ p }}" role="img" aria-label="{{ p }}%"><b>{{ p }}%</b></div>
+      <p class="resultado-puntaje sr-only"><b>{{ p }}%</b></p>
+      {% if nivel %}<p><span class="chip nivel-{{ nivel }}">{{ icono('target') }}{{ nivel | etiqueta }}</span></p>{% endif %}
+    </div>
+  {% else %}
+    <p class="aviso">{{ _("Tu docente está revisando las respuestas abiertas. Vuelve más tarde para ver tu resultado completo.") }}</p>
+  {% endif %}
+  <p class="mut">{{ _("Los comentarios los escribe una IA y pueden equivocarse. Si tienes dudas, pregúntale a tu docente.") }}</p>
+</section>
+<ol class="ejercicios-lista">
+  {% for it, r in filas %}
+  <li class="glass caja ejercicio">
+    <p><b>{{ it.enunciado }}</b></p>
+    <p>{{ _("Tu respuesta") }}:
+      {% if r.respuesta is none or r.respuesta == '' %}<i>{{ _("sin responder") }}</i>
+      {% elif it.tipo == 'opcion_multiple' %}{{ it.opciones[r.respuesta] }}
+      {% elif it.tipo == 'verdadero_falso' %}{{ _("Verdadero") if r.respuesta else _("Falso") }}
+      {% else %}{{ r.respuesta }}{% endif %}
+    </p>
+    <p>
+      {% if r.puntaje is none %}<span class="chip w">{{ _("Pendiente") }}</span>
+      {% elif r.puntaje >= 1 %}<span class="chip ok">{{ icono('check') }}{{ _("Correcta") }}</span>
+      {% elif r.puntaje > 0 %}<span class="chip w">{{ _("Parcialmente correcta") }}</span>
+      {% else %}<span class="chip nivel-inicial">{{ icono('x') }}{{ _("Incorrecta") }}</span>{% endif %}
+    </p>
+    {% if it.tipo != 'abierta' and r.puntaje is not none and r.puntaje < 1 %}
+      <p>{{ _("Respuesta correcta") }}:
+        {% if it.tipo == 'opcion_multiple' %}{{ it.opciones[it.correcta] }}{% else %}{{ _("Verdadero") if it.correcta else _("Falso") }}{% endif %}
+      </p>
+    {% endif %}
+    {% if r.comentario %}<p><span class="ia">IA</span> {{ r.comentario }}</p>{% endif %}
+    {% if it.explicacion %}<p class="mut">{{ icono('bulb') }} {{ it.explicacion }}</p>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/ejercicios.js') }}" defer></script>{% endblock %}

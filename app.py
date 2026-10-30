@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 
 from flask import Flask, jsonify, redirect, url_for
+from markupsafe import Markup
 
 import httpx
 
@@ -12,6 +13,11 @@ from routes.docente import bp as docente_bp
 from routes.estudiante import bp as estudiante_bp
 from routes.jobs import bp as jobs_bp
 from routes.panel import bp as panel_bp
+
+
+def icono(nombre: str, clase: str = "") -> Markup:
+    """SVG decorativo del set de templates/_iconos.html (el texto del botón o un aria-label da el nombre)."""
+    return Markup('<svg class="ico {}" aria-hidden="true" focusable="false"><use href="#i-{}"></use></svg>').format(clase, nombre)
 
 
 def create_app(con_worker: bool | None = None):
@@ -49,6 +55,7 @@ def create_app(con_worker: bool | None = None):
         return {"idioma_ui": codigo, "idiomas_ui": i18n.IDIOMAS, "catalogo_js": i18n.catalogo_js(codigo)}
 
     app.jinja_env.globals["_"] = i18n._
+    app.jinja_env.globals["icono"] = icono
     app.jinja_env.filters["etiqueta"] = i18n.etiqueta
 
     @app.before_request

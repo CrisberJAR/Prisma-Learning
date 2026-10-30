@@ -1,6 +1,8 @@
+import json
+
 from flask import Blueprint, flash, g, jsonify, redirect, render_template, request, url_for
 
-from services import analitica, chat_service, contenido, cuentas, dua, imagen_educativa, jobs, materiales, mediacion, package_builder
+from services import analitica, chat_service, contenido, cuentas, dua, ejercicios, evaluacion, imagen_educativa, jobs, materiales, mediacion, package_builder
 from services import cursos as svc
 from services.auth import requiere_pagina, requiere_rol
 from services.i18n import _
@@ -306,7 +308,143 @@ def sesion(sesion_id):
         url_imagen=url_for("panel.imagen_educativa_json", sesion_id=sesion["id"]),
         url_mediacion=url_for("panel.mediacion_json", sesion_id=sesion["id"]),
         rol_mediacion="docente",
+        conjunto=ejercicios.obtener_seguro(sesion["id"]),
+        tipos_ejercicio=ejercicios.NOMBRES_TIPO,
+        tipos_ejercicio_ui={k: _(v) for k, v in ejercicios.NOMBRES_TIPO.items()},
+        cantidad_defecto=ejercicios.CANTIDAD_DEFECTO,
+        cantidad_max=ejercicios.CANTIDAD_MAX,
+        resultados=evaluacion.resumen_sesion(sesion["id"]),
     )
+
+
+def _a_ejercicios(sesion_id: str):
+    return redirect(url_for("panel.sesion", sesion_id=sesion_id, pestana="ejercicios") + "#ejercicios")
+
+
+@bp.post("/sesiones/<uuid:sesion_id>/ejercicios/generar")
+@requiere_pagina("docente")
+def generar_ejercicios(sesion_id):
+    sesion = materiales.docente_es_dueno_de_sesion(str(sesion_id), g.usuario["id"])
+    if sesion is None:
+        return (_("Sesión no encontrada."), 404)
+    actual = ejercicios.obtener_seguro(sesion["id"])
+    if actual and actual.get("items") and request.form.get("confirmar") != "si":
+        flash(_("Marca la casilla para confirmar: los ejercicios actuales se reemplazarán."), "error")
+        return _a_ejercicios(sesion["id"])
+    try:
+        cantidad = int(request.form.get("cantidad") or ejercicios.CANTIDAD_DEFECTO)
+    except ValueError:
+        cantidad = ejercicios.CANTIDAD_DEFECTO
+    try:
+        generado = ejercicios.generar(sesion, cantidad, request.form.getlist("tipos"))
+        ejercicios.guardar_generados(sesion["id"], generado)
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return _a_ejercicios(sesion["id"])
+    except Exception as exc:
+        flash(_("No se pudieron guardar los ejercicios. ¿Ejecutaste supabase/006_ejercicios.sql? Detalle: {detalle}", detalle=exc), "error")
+        return _a_ejercicios(sesion["id"])
+    flash(_("Se generaron {n} ejercicios. Revísalos y edítalos antes de publicarlos.", n=len(generado["items"])), "ok")
+    return _a_ejercicios(sesion["id"])
+
+
+@bp.post("/sesiones/<uuid:sesion_id>/ejercicios")
+@requiere_pagina("docente")
+def guardar_ejercicios(sesion_id):
+    sesion = materiales.docente_es_dueno_de_sesion(str(sesion_id), g.usuario["id"])
+    if sesion is None:
+        return (_("Sesión no encontrada."), 404)
+    try:
+        items = json.loads(request.form.get("items_json") or "[]")
+        ejercicios.guardar_edicion(sesion["id"], items)
+    except json.JSONDecodeError:
+        flash(_("No se pudieron leer los ejercicios del formulario."), "error")
+        return _a_ejercicios(sesion["id"])
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return _a_ejercicios(sesion["id"])
+    flash(_("Ejercicios guardados."), "ok")
+    return _a_ejercicios(sesion["id"])
+
+
+@bp.post("/sesiones/<uuid:sesion_id>/ejercicios/publicar")
+@requiere_pagina("docente")
+def publicar_ejercicios(sesion_id):
+    sesion = materiales.docente_es_dueno_de_sesion(str(sesion_id), g.usuario["id"])
+    if sesion is None:
+        return (_("Sesión no encontrada."), 404)
+    try:
+        ejercicios.publicar(sesion["id"])
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return _a_ejercicios(sesion["id"])
+    if sesion.get("estado") == "publicado":
+        flash(_("Ejercicios publicados. Los estudiantes ya pueden resolverlos."), "ok")
+    else:
+        flash(_("Ejercicios publicados. Los estudiantes los verán cuando publiques la sesión."), "ok")
+    return _a_ejercicios(sesion["id"])
+
+
+@bp.post("/sesiones/<uuid:sesion_id>/ejercicios/despublicar")
+@requiere_pagina("docente")
+def despublicar_ejercicios(sesion_id):
+    sesion = materiales.docente_es_dueno_de_sesion(str(sesion_id), g.usuario["id"])
+    if sesion is None:
+        return (_("Sesión no encontrada."), 404)
+    try:
+        ejercicios.despublicar(sesion["id"])
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return _a_ejercicios(sesion["id"])
+    flash(_("Ejercicios retirados. Los estudiantes ya no los ven; las respuestas enviadas se conservan."), "ok")
+    return _a_ejercicios(sesion["id"])
+
+
+@bp.get("/respuestas/<uuid:respuesta_id>")
+@requiere_pagina("docente")
+def informe(respuesta_id):
+    visto = evaluacion.respuesta_de_docente(str(respuesta_id), g.usuario["id"])
+    if visto is None:
+        return (_("Informe no encontrado."), 404)
+    respuesta, sesion = visto
+    perfil = svc.perfil_basico(respuesta["estudiante_id"])
+    return render_template(
+        "docente/informe.html",
+        respuesta=respuesta,
+        sesion=sesion,
+        estudiante=perfil,
+        informe=evaluacion.informe_para_docente(respuesta, contenido.idioma_interfaz(), sesion.get("idioma_original")),
+        filas=list(zip(respuesta.get("items_snapshot") or [], respuesta.get("resultado") or [])),
+        nivel=evaluacion.nivel_de(respuesta.get("puntaje")),
+        tipos_ejercicio=ejercicios.NOMBRES_TIPO,
+    )
+
+
+@bp.post("/respuestas/<uuid:respuesta_id>/reevaluar")
+@requiere_pagina("docente")
+def reevaluar(respuesta_id):
+    visto = evaluacion.respuesta_de_docente(str(respuesta_id), g.usuario["id"])
+    if visto is None:
+        return (_("Informe no encontrado."), 404)
+    respuesta, sesion = visto
+    nueva = evaluacion.reevaluar(respuesta, sesion)
+    if nueva.get("estado") == "evaluado":
+        flash(_("Evaluación actualizada."), "ok")
+    else:
+        flash(_("La IA sigue sin poder evaluar ahora. Inténtalo de nuevo en unos minutos."), "error")
+    return redirect(url_for("panel.informe", respuesta_id=respuesta["id"]))
+
+
+@bp.post("/respuestas/<uuid:respuesta_id>/eliminar")
+@requiere_pagina("docente")
+def permitir_reintento(respuesta_id):
+    visto = evaluacion.respuesta_de_docente(str(respuesta_id), g.usuario["id"])
+    if visto is None:
+        return (_("Informe no encontrado."), 404)
+    respuesta, sesion = visto
+    evaluacion.eliminar(respuesta["id"])
+    flash(_("Intento eliminado. El estudiante puede volver a resolver los ejercicios."), "ok")
+    return redirect(url_for("panel.sesion", sesion_id=sesion["id"], pestana="resultados") + "#resultados")
 
 
 @bp.post("/sesiones/<uuid:sesion_id>/editar")

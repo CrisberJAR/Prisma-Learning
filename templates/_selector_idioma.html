@@ -1,7 +1,7 @@
 <form class="selector-idioma" method="post" action="{{ url_for('auth.cambiar_idioma') }}">
   <input type="hidden" name="volver" value="{{ request.full_path.rstrip('?') if request.method == 'GET' else url_for('raiz') }}">
   <label for="idioma-ui-{{ sufijo or 'top' }}" class="sr-only">{{ _("Idioma de la interfaz") }}</label>
-  <span aria-hidden="true">🌐</span>
+  {{ icono('globe') }}
   <select id="idioma-ui-{{ sufijo or 'top' }}" name="idioma" onchange="this.form.submit()">
     {% for i in idiomas_ui %}
     <option value="{{ i.codigo }}" lang="{{ i.codigo }}" {% if i.codigo == idioma_ui %}selected{% endif %}>{{ i.nombre }}</option>

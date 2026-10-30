@@ -3,7 +3,7 @@ import json
 from config import settings
 from flask import Blueprint, flash, g, jsonify, redirect, render_template, request, session, url_for
 
-from services import analitica, chat_service, contenido, dua, estudiante as svc, imagen_educativa, mediacion, rate_limit
+from services import analitica, chat_service, contenido, dua, ejercicios, estudiante as svc, evaluacion, imagen_educativa, mediacion, rate_limit
 from services import cursos as cursos_svc
 from services.auth import requiere_pagina, requiere_rol
 from services.package_builder import FORMATOS_MVP, NOMBRES_UI
@@ -95,6 +95,57 @@ def sesion(sesion_id):
         url_imagen=url_for("estudiante.imagen_educativa_json", sesion_id=sesion["id"]),
         url_mediacion=url_for("estudiante.mediacion_json", sesion_id=sesion["id"]),
         rol_mediacion="estudiante",
+        ejercicios_estado=_estado_ejercicios(sesion["id"], g.usuario["id"]),
+    )
+
+
+def _estado_ejercicios(sesion_id: str, estudiante_id: str) -> dict | None:
+    """None si no hay ejercicios publicados; si no, {"intento": fila o None}."""
+    conjunto = ejercicios.obtener_seguro(sesion_id)
+    if not conjunto or conjunto.get("estado") != "publicado":
+        return None
+    return {"n": len(conjunto.get("items") or []), "intento": evaluacion.intento(conjunto["id"], estudiante_id)}
+
+
+@bp.route("/sesiones/<uuid:sesion_id>/ejercicios", methods=["GET", "POST"])
+@requiere_pagina("estudiante")
+def resolver_ejercicios(sesion_id):
+    visto = svc.sesion_visible(str(sesion_id), g.usuario["id"])
+    if visto is None:
+        return (_("Esa sesión no está publicada o no estás inscrito."), 404)
+    sesion, insc = visto
+    conjunto = ejercicios.obtener_seguro(sesion["id"])
+    intento = evaluacion.intento(conjunto["id"], g.usuario["id"]) if conjunto else None
+    if not intento and (not conjunto or conjunto.get("estado") != "publicado"):
+        return (_("Esta sesión no tiene ejercicios publicados."), 404)
+    idioma = contenido.idioma_para_estudiante(sesion["id"], insc)
+    original = sesion.get("idioma_original") or "es"
+    if request.method == "POST" and not intento:
+        try:
+            rate_limit.comprobar(f"ejercicios:{g.usuario['id']}", 3, ventana_s=60)
+            evaluacion.enviar(sesion, conjunto, g.usuario["id"], request.form, idioma)
+        except (ValueError, rate_limit.DemasiadoRapido) as exc:
+            flash(str(exc), "error")
+        return redirect(url_for("estudiante.resolver_ejercicios", sesion_id=sesion["id"]))
+    titulo = sesion.get("titulo") or ""
+    if not contenido.mismo_idioma(idioma, original):
+        titulo = contenido.corto(titulo, idioma, original)
+    if intento:
+        items = ejercicios.para_estudiante(intento["items_snapshot"], idioma, original, con_solucion=True)
+        return render_template(
+            "estudiante/ejercicios.html",
+            sesion=sesion,
+            titulo=titulo,
+            intento=intento,
+            filas=list(zip(items, intento.get("resultado") or [])),
+            nivel=evaluacion.nivel_de(intento.get("puntaje")),
+        )
+    return render_template(
+        "estudiante/ejercicios.html",
+        sesion=sesion,
+        titulo=titulo,
+        intento=None,
+        items=ejercicios.para_estudiante(conjunto["items"], idioma, original),
     )
 
 

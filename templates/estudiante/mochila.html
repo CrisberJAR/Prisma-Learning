@@ -2,28 +2,29 @@
 {% block title %}{{ _("Mi mochila") }} · Prisma{% endblock %}
 {% block contenido %}
 <section class="glass caja">
-  <h1>{{ _("Mi mochila") }}</h1>
+  <div class="titulo"><span class="ico-tile">{{ icono('backpack') }}</span><h1>{{ _("Mi mochila") }}</h1></div>
   <p class="mut">{{ _("Materias en las que estás inscrito. Solo ves lo que el docente ya publicó.") }}</p>
 </section>
 {% if not cursos %}
 <div class="empty glass caja">
-  <div class="o"></div>
+  <div class="o">{{ icono('backpack') }}</div>
   <b>{{ _("Aún no tienes cursos") }}</b>
   {{ _("Pide a tu docente que te inscriba.") }}
 </div>
 {% endif %}
 {% for c in cursos %}
   <article class="glass caja">
-    <h2>{{ c.nombre_curso }}</h2>
-    {% if c.nivel_educativo_etiqueta %}<p class="mut">{{ _(c.nivel_educativo_etiqueta) }}</p>{% endif %}
+    <div class="titulo"><span class="ico-tile">{{ icono('book') }}</span><div><h2>{{ c.nombre_curso }}</h2>
+    {% if c.nivel_educativo_etiqueta %}<p class="mut">{{ _(c.nivel_educativo_etiqueta) }}</p>{% endif %}</div></div>
     {% if c.descripcion %}<p class="mut">{{ c.descripcion }}</p>{% endif %}
     <h3>{{ _("Sesiones publicadas") }}</h3>
     {% if c.sesiones %}
       <div class="tarjetas">
         {% for s in c.sesiones %}
           <a class="tarj glass" href="{{ url_for('estudiante.sesion', sesion_id=s.id) }}">
-            <div class="ph"></div>
+            <div class="ph mini c{{ loop.index0 % 6 }}">{{ icono('book') }}</div>
             <h3>{{ s.titulo }}</h3>
+            <span class="ir">{{ _("Entrar") }} {{ icono('arrow-right') }}</span>
           </a>
         {% endfor %}
       </div>

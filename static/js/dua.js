@@ -22,6 +22,44 @@
     return partes.map(function (p) { return p.trim(); });
   }
 
+  // Markdown mínimo y seguro (se escapa primero): encabezados, listas, negritas y párrafos.
+  function md(texto) {
+    var html = [];
+    var lista = null;
+    var parrafo = [];
+    function cerrarParrafo() {
+      if (parrafo.length) html.push("<p>" + parrafo.join(" ") + "</p>");
+      parrafo = [];
+    }
+    function cerrarLista() {
+      if (lista) html.push("</" + lista + ">");
+      lista = null;
+    }
+    function enLinea(s) {
+      return esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    }
+    String(texto || "").split(/\r?\n/).forEach(function (linea) {
+      var l = linea.trim();
+      var m;
+      if (!l) { cerrarParrafo(); cerrarLista(); return; }
+      if ((m = l.match(/^#{1,6}\s+(.*)$/))) {
+        cerrarParrafo(); cerrarLista();
+        html.push("<h3>" + enLinea(m[1]) + "</h3>");
+      } else if ((m = l.match(/^[-*•]\s+(.*)$/)) || (m = l.match(/^\d+[.)]\s+(.*)$/))) {
+        cerrarParrafo();
+        var tipo = /^\d/.test(l) ? "ol" : "ul";
+        if (lista !== tipo) { cerrarLista(); html.push("<" + tipo + ">"); lista = tipo; }
+        html.push("<li>" + enLinea(m[1]) + "</li>");
+      } else {
+        cerrarLista();
+        parrafo.push(enLinea(l));
+      }
+    });
+    cerrarParrafo();
+    cerrarLista();
+    return html.join("");
+  }
+
   function bionicHtml(texto) {
     return esc(texto).replace(/\S+/g, function (w) {
       var n = Math.max(1, Math.ceil(w.length * 0.4));
@@ -100,10 +138,10 @@
   function reproductor() {
     return (
       '<div class="dua-audio">' +
-      '<button type="button" class="btn p" data-dua-hablar>' + esc(t("Escuchar narración")) + "</button>" +
-      '<button type="button" class="btn" data-dua-pausar hidden>' + esc(t("Pausar")) + "</button>" +
-      '<button type="button" class="btn p" data-dua-continuar hidden>' + esc(t("Continuar")) + "</button>" +
-      '<button type="button" class="btn d" data-dua-parar hidden>' + esc(t("Detener")) + "</button>" +
+      '<button type="button" class="btn p" data-dua-hablar>' + '<svg class="ico" aria-hidden="true"><use href="#i-volume"></use></svg>' + esc(t("Escuchar narración")) + "</button>" +
+      '<button type="button" class="btn" data-dua-pausar hidden>' + '<svg class="ico" aria-hidden="true"><use href="#i-pause"></use></svg>' + esc(t("Pausar")) + "</button>" +
+      '<button type="button" class="btn p" data-dua-continuar hidden>' + '<svg class="ico" aria-hidden="true"><use href="#i-play"></use></svg>' + esc(t("Continuar")) + "</button>" +
+      '<button type="button" class="btn d" data-dua-parar hidden>' + '<svg class="ico" aria-hidden="true"><use href="#i-stop"></use></svg>' + esc(t("Detener")) + "</button>" +
       '<span class="mut">' + esc(t("Pausa para seguir donde lo dejaste; detener reinicia la narración.")) + "</span></div>"
     );
   }
@@ -130,7 +168,7 @@
     }
     if (needs.indexOf("apoyo_visual") >= 0) html += mapa(texto);
     if (needs.indexOf("tdah") >= 0) html += pills(texto);
-    else html += "<div class='texto'>" + esc(texto) + "</div>";
+    else html += "<div class='texto md'>" + md(texto) + "</div>";
     preview.innerHTML = html;
   }
 

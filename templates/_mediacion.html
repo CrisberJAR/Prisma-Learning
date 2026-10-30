@@ -10,7 +10,7 @@
       </span>
       <h3 id="med-pauta-t">{% if rol_mediacion == 'docente' %}{{ _("Pauta de mediación para el docente") }}{% else %}{{ _("Pauta de apoyo para estudiar") }}{% endif %}</h3>
     </div>
-    <p class="mut" id="med-pauta-estado" role="status">{{ _("Preparando la pauta de esta clase…") }}</p>
+    <p class="mut" id="med-pauta-estado" role="status"><span class="cargando">{{ _("Preparando la pauta de esta clase…") }}</span></p>
     <p id="med-pauta-texto" hidden></p>
   </article>
   <article class="med-glosario glass caja" aria-labelledby="med-glos-t">
@@ -20,7 +20,7 @@
       </span>
       <h3 id="med-glos-t">{{ _("Glosario de apoyo") }}</h3>
     </div>
-    <p class="mut" id="med-glos-estado" role="status">{{ _("Preparando el glosario…") }}</p>
+    <p class="mut" id="med-glos-estado" role="status"><span class="cargando">{{ _("Preparando el glosario…") }}</span></p>
     <ul class="med-lista" id="med-glos-lista" hidden></ul>
   </article>
 </section>

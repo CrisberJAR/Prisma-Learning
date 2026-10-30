@@ -6,16 +6,17 @@
   <title>{{ _("Sin conexión") }} · Prisma</title>
   {% include "_fuentes.html" %}
   <link rel="stylesheet" href="/static/css/app.css">
-  <meta name="theme-color" content="#1f5bff">
+  <meta name="theme-color" content="#0b1437">
 </head>
 <body>
+  {% include "_iconos.html" %}
   <a class="skip" href="#contenido">{{ _("Saltar al contenido") }}</a>
   <main id="contenido" class="hero glass caja" tabindex="-1">
     <div class="empty">
-      <div class="o"></div>
+      <div class="o">{{ icono('wifi-off') }}</div>
       <h1>{{ _("Sin conexión") }}</h1>
       <p>{{ _("Puedes seguir leyendo las sesiones que ya abriste si quedaron en caché. El tutor de IA no funciona sin internet.") }}</p>
-      <p><a class="btn" href="/estudiante/cursos">{{ _("Volver a la mochila") }}</a></p>
+      <p><a class="btn p" href="/estudiante/cursos">{{ icono('backpack') }}{{ _("Volver a la mochila") }}</a></p>
     </div>
   </main>
 </body>

@@ -82,7 +82,8 @@ def cortos(textos: list[str], idioma: str, idioma_original: str | None = "es") -
                         "content": (
                             f'Traduce cada texto al idioma «{dua.normalizar_idioma(idioma)}» y devuelve '
                             '{"t": ["traducción 1", "traducción 2", ...]} en el mismo orden y con la misma cantidad. '
-                            "Son títulos de clases y cursos: tradúcelos de forma natural, sin comillas ni comentarios.\n"
+                            "Son títulos, enunciados, opciones o comentarios de una clase: tradúcelos de forma natural "
+                            "y fiel, sin comillas ni comentarios.\n"
                             f"<DATOS>\n{json.dumps(faltan, ensure_ascii=False)}\n</DATOS>"
                         ),
                     },
@@ -96,7 +97,7 @@ def cortos(textos: list[str], idioma: str, idioma_original: str | None = "es") -
             if isinstance(lista, list) and len(lista) == len(faltan):
                 filas = []
                 for original, traducido in zip(faltan, lista):
-                    traducido = re.sub(r"\s+", " ", str(traducido or "")).strip()[:400]
+                    traducido = re.sub(r"\s+", " ", str(traducido or "")).strip()[:1500]
                     if traducido:
                         hechos[original] = traducido
                         filas.append({"clave": claves[original], "formato": "corto", "contenido": {"texto": traducido}})

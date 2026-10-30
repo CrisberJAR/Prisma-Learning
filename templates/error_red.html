@@ -2,11 +2,11 @@
 {% block title %}{{ _("No se pudo cargar") }} · Prisma{% endblock %}
 {% block contenido %}
 <section class="glass caja" role="alert">
-  <h1>{{ _("No se pudo cargar esta página") }}</h1>
+  <div class="titulo"><span class="ico-tile d">{{ icono('alert') }}</span><h1>{{ _("No se pudo cargar esta página") }}</h1></div>
   <p>{{ _("Hubo un corte al consultar los datos. No se perdió el curso: recarga e inténtalo de nuevo.") }}</p>
   <p class="acciones">
-    <button class="btn p" type="button" onclick="location.reload()">{{ _("Recargar") }}</button>
-    <a class="btn" href="{{ url_for('raiz') }}">{{ _("Ir al inicio") }}</a>
+    <button class="btn p" type="button" onclick="location.reload()">{{ icono('refresh') }}{{ _("Recargar") }}</button>
+    <a class="btn" href="{{ url_for('raiz') }}">{{ icono('home') }}{{ _("Ir al inicio") }}</a>
   </p>
 </section>
 {% endblock %}
