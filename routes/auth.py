@@ -77,6 +77,9 @@ def cambiar_idioma():
     codigo = i18n.normalizar(request.form.get("idioma"))
     if codigo:
         session["idioma_ui"] = codigo
+        # La lengua elegida a mano en cada sesión deja paso al idioma nuevo.
+        for clave in [k for k in session if k.startswith("idioma_") and k != "idioma_ui"]:
+            session.pop(clave)
         g.idioma = codigo
         usuario = usuario_actual()
         if usuario:

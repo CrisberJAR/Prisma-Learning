@@ -24,10 +24,15 @@ def chat(sesion_id):
     sesion, insc = visto
     cuerpo = request.get_json(silent=True) or {}
     pregunta = (cuerpo.get("pregunta") or request.form.get("pregunta") or "").strip()
-    from services import dua
+    from services import contenido, dua
 
     prefs = dua.normalizar_preferencias(insc.get("preferencias"))
-    idioma = dua.normalizar_idioma(insc.get("idioma_preferido") or "es")
+    idioma = contenido.idioma_para_estudiante(sesion["id"], insc)
+    original = sesion.get("idioma_original") or "es"
+    if not contenido.mismo_idioma(idioma, original):
+        # El tutor lee el material ya traducido (sale de la caché de la vista de la clase):
+        # así cita secciones y términos en el idioma que entiende la persona.
+        sesion = {**sesion, "texto_extraido": dua.traducir(sesion.get("texto_extraido") or "", idioma, original)}
 
     def eventos():
         try:

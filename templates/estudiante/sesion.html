@@ -72,6 +72,7 @@
     </aside>
   </div>
 </div>
+<script>window.PRISMA_VOZ_CONTENIDO = {{ voz_contenido | tojson }};</script>
 <script type="application/json" id="dua-texto">{{ (sesion.texto_extraido or '') | tojson }}</script>
 {% endblock %}
 {% block scripts %}
@@ -90,7 +91,10 @@
         preview: "#dua-preview",
         texto: texto,
         traducirUrl: {{ url_for('estudiante.dua_traducir', sesion_id=sesion.id) | tojson }},
-        aplicarCuerpo: true
+        aplicarCuerpo: true,
+        traducirAlCargar: {{ traducir_al_cargar | tojson }},
+        idiomaInicial: {{ idioma_contenido | tojson }},
+        idiomaNombre: {{ _(idioma_contenido) | tojson }}
       });
     }
   });

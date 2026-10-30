@@ -224,31 +224,36 @@
       });
     }
 
+    // Texto "base": el original o, si la persona usa otro idioma (opts.traducirAlCargar), su traducción.
+    // Cambiar otros ajustes DUA vuelve a esta base, nunca al original en un idioma que no entiende.
+    var baseTexto = original;
+    var baseMeta = ultimoMeta;
+
     function pintarVista() {
       var needs = seleccion(root);
       clasesCuerpo(needs);
       if (needs.indexOf("lengua") < 0) {
-        textoMostrado = original;
-        ultimoMeta = { tts: ttsSoporta("es-PE"), codigo: "es-PE", traducido: false, nombre: "Español" };
+        textoMostrado = baseTexto;
+        ultimoMeta = baseMeta;
         estadoIdioma(root, "", "");
       }
       aplicar(preview, textoMostrado, needs, ultimoMeta);
     }
 
-    function aplicarIdioma() {
+    function aplicarIdioma(destForzado, esBase) {
       var needs = seleccion(root);
-      var dest = idioma();
+      var dest = destForzado || idioma();
       if (dest.length < 2) {
         var errCorto = t("El idioma ingresado no fue reconocido o no es válido. Por favor, verifica el nombre.");
         estadoIdioma(root, "error", errCorto);
         ultimoMeta = { error: errCorto, tts: false, traducido: false };
-        textoMostrado = original;
+        textoMostrado = baseTexto;
         aplicar(preview, textoMostrado, needs, ultimoMeta);
         return;
       }
       if (!opts.traducirUrl || pendiente) return;
       pendiente = true;
-      estadoIdioma(root, "ok", t("Identificando el idioma y traduciendo el texto extraído…"));
+      if (!esBase) estadoIdioma(root, "ok", t("Identificando el idioma y traduciendo el texto extraído…"));
       preview.setAttribute("aria-busy", "true");
       fetch(opts.traducirUrl, {
         method: "POST",
@@ -268,7 +273,7 @@
             var msg = j.error || t("El idioma ingresado no fue reconocido o no es válido. Por favor, verifica el nombre.");
             estadoIdioma(root, "error", msg);
             ultimoMeta = { error: msg, tts: false, traducido: false, nombre: dest };
-            textoMostrado = original;
+            textoMostrado = baseTexto;
             aplicar(preview, textoMostrado, seleccion(root), ultimoMeta);
             return;
           }
@@ -278,6 +283,12 @@
           var hayVoz = iaAudio && ttsSoporta(codigo);
           ultimoMeta = { traducido: true, nombre: nombre, codigo: codigo, tts: hayVoz };
           textoMostrado = j.texto || original;
+          if (esBase) {
+            baseTexto = textoMostrado;
+            baseMeta = ultimoMeta;
+            pintarVista();
+            return;
+          }
           if (hayVoz) {
             estadoIdioma(root, "", t("Texto traducido a {nombre}. Ya puedes escuchar la narración.", { nombre: nombre }));
           } else {
@@ -288,7 +299,10 @@
         .catch(function () {
           pendiente = false;
           preview.setAttribute("aria-busy", "false");
-          estadoIdioma(root, "error", t("No se pudo comprobar el idioma. Inténtalo de nuevo."));
+          if (esBase) pintarVista();
+          estadoIdioma(root, "error", esBase
+            ? t("No se pudo traducir la clase ahora. Recarga la página para intentarlo de nuevo.")
+            : t("No se pudo comprobar el idioma. Inténtalo de nuevo."));
         });
     }
 
@@ -340,7 +354,16 @@
         setReproductorEstado(cajaAudio, "idle");
       });
     });
-    pintarVista();
+    if (opts.traducirAlCargar && opts.idiomaInicial && opts.traducirUrl && original) {
+      clasesCuerpo(seleccion(root));
+      preview.innerHTML =
+        "<p class='aviso' role='status'>" +
+        esc(t("Traduciendo la clase a {nombre}…", { nombre: opts.idiomaNombre || opts.idiomaInicial })) +
+        "</p>";
+      aplicarIdioma(opts.idiomaInicial, true);
+    } else {
+      pintarVista();
+    }
   }
 
   global.PrismaDUA = {

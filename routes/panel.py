@@ -1,6 +1,6 @@
 from flask import Blueprint, flash, g, jsonify, redirect, render_template, request, url_for
 
-from services import analitica, chat_service, cuentas, dua, imagen_educativa, jobs, materiales, mediacion, package_builder
+from services import analitica, chat_service, contenido, cuentas, dua, imagen_educativa, jobs, materiales, mediacion, package_builder
 from services import cursos as svc
 from services.auth import requiere_pagina, requiere_rol
 from services.i18n import _
@@ -301,6 +301,8 @@ def sesion(sesion_id):
         necesidades_dua=dua.NECESIDADES,
         lenguas_dua=dua.LENGUAS,
         dudas=chat_service.dudas_de_sesion(sesion["id"]),
+        idioma_contenido=contenido.idioma_interfaz(),
+        traducir_al_cargar=not contenido.mismo_idioma(contenido.idioma_interfaz(), sesion.get("idioma_original") or "es"),
         url_imagen=url_for("panel.imagen_educativa_json", sesion_id=sesion["id"]),
         url_mediacion=url_for("panel.mediacion_json", sesion_id=sesion["id"]),
         rol_mediacion="docente",
@@ -346,7 +348,7 @@ def dua_traducir(sesion_id):
     if sesion is None:
         return jsonify({"error": _("Sesión no encontrada")}), 404
     cuerpo = request.get_json(silent=True) or {}
-    out = dua.adaptar_a_lengua(sesion.get("texto_extraido") or "", cuerpo.get("idioma") or "")
+    out = dua.adaptar_a_lengua(sesion.get("texto_extraido") or "", cuerpo.get("idioma") or "", sesion.get("idioma_original") or "es")
     return jsonify(out)
 
 
@@ -357,7 +359,9 @@ def imagen_educativa_json(sesion_id):
     if sesion is None:
         return jsonify({"error": _("Sesión no encontrada")}), 404
     try:
-        return jsonify(imagen_educativa.para_sesion(sesion))
+        out = imagen_educativa.para_sesion(sesion)
+        out["alt"] = _("Imagen educativa del tema: {titulo}", titulo=sesion.get("titulo") or "")
+        return jsonify(out)
     except Exception as exc:
         return jsonify({"estado": "error", "url": "", "alt": "", "error": str(exc)}), 500
 
@@ -369,7 +373,7 @@ def mediacion_json(sesion_id):
     if sesion is None:
         return jsonify({"error": _("Sesión no encontrada")}), 404
     try:
-        return jsonify(mediacion.para_sesion(sesion))
+        return jsonify(mediacion.para_sesion(sesion, contenido.idioma_interfaz()))
     except Exception as exc:
         return jsonify(
             {

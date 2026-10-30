@@ -123,7 +123,7 @@
     var btnVoz = document.getElementById("btn-voz");
     rec = rec || new SR();
     // Dicta en el idioma de la interfaz: es en el que la persona escribe.
-    rec.lang = { es: "es-PE", en: "en-US", pt: "pt-BR", fr: "fr-FR" }[window.PRISMA_IDIOMA] || "es-PE";
+    rec.lang = window.PRISMA_VOZ_CONTENIDO || { es: "es-PE", en: "en-US", pt: "pt-BR", fr: "fr-FR" }[window.PRISMA_IDIOMA] || "es-PE";
     rec.onresult = function (e) {
       pregunta.value = (pregunta.value + " " + e.results[0][0].transcript).trim();
     };
@@ -167,7 +167,8 @@
         return;
       }
       setTtsEstado("playing");
-      tts.hablar(texto, "es-PE", function () {
+      // El tutor responde en el idioma del contenido: la voz debe ser la de ese idioma.
+      tts.hablar(texto, window.PRISMA_VOZ_CONTENIDO || "es-PE", function () {
         setTtsEstado("idle");
         estado.textContent = t("Lectura terminada.");
       });

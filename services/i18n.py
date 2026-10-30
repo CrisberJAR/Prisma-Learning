@@ -111,9 +111,10 @@ def claves_js() -> frozenset[str]:
 
 def claves_dinamicas() -> set[str]:
     """Textos que se traducen como variable (_(n.etiqueta)): el extractor no los ve en el código."""
-    from services import cursos, dua, package_builder
+    from services import cursos, dua, mediacion, package_builder
 
     claves = set(ETIQUETAS.values()) | {dua.MSG_IDIOMA_INVALIDO}
+    claves |= {mediacion.PAUTA_LOCAL_DOCENTE, mediacion.PAUTA_LOCAL_ESTUDIANTE}
     claves.update(n["etiqueta"] for n in dua.NECESIDADES)
     claves.update(n["ayuda"] for n in dua.NECESIDADES)
     claves.update(l["etiqueta"] for l in dua.LENGUAS)

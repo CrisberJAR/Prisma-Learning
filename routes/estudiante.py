@@ -3,10 +3,11 @@ import json
 from config import settings
 from flask import Blueprint, flash, g, jsonify, redirect, render_template, request, session, url_for
 
-from services import analitica, chat_service, dua, estudiante as svc, imagen_educativa, mediacion, rate_limit
+from services import analitica, chat_service, contenido, dua, estudiante as svc, imagen_educativa, mediacion, rate_limit
 from services import cursos as cursos_svc
 from services.auth import requiere_pagina, requiere_rol
 from services.package_builder import FORMATOS_MVP, NOMBRES_UI
+from services import i18n
 from services.i18n import _
 
 bp = Blueprint("estudiante", __name__, url_prefix="/estudiante")
@@ -21,10 +22,23 @@ def inicio():
 @bp.get("/cursos")
 @requiere_pagina("estudiante")
 def mochila():
-    return render_template(
-        "estudiante/mochila.html",
-        cursos=svc.mochila(g.usuario["id"]),
-    )
+    cursos = svc.mochila(g.usuario["id"])
+    if i18n.idioma_actual() != i18n.DEFECTO:
+        _traducir_mochila(cursos, contenido.idioma_interfaz())
+    return render_template("estudiante/mochila.html", cursos=cursos)
+
+
+def _traducir_mochila(cursos: list[dict], idioma: str) -> None:
+    """Nombres de curso, descripciones y títulos de sesión en una sola llamada de traducción."""
+    textos = []
+    for c in cursos:
+        textos += [c.get("nombre_curso") or "", c.get("descripcion") or ""]
+        textos += [s.get("titulo") or "" for s in c.get("sesiones") or []]
+    traducidos = iter(contenido.cortos(textos, idioma))
+    for c in cursos:
+        c["nombre_curso"], c["descripcion"] = next(traducidos), next(traducidos)
+        for s in c.get("sesiones") or []:
+            s["titulo"] = next(traducidos)
 
 
 @bp.post("/cursos/<uuid:curso_id>/preferencias")
@@ -53,7 +67,11 @@ def sesion(sesion_id):
         session[clave] = activos
     else:
         activos = dua.normalizar_preferencias(activos)
-    idioma_actual = session.get(f"idioma_{sesion['id']}") or dua.normalizar_idioma(insc.get("idioma_preferido") or "es")
+    idioma_contenido = contenido.idioma_para_estudiante(sesion["id"], insc)
+    original = sesion.get("idioma_original") or "es"
+    traducir_al_cargar = not contenido.mismo_idioma(idioma_contenido, original)
+    if traducir_al_cargar:
+        sesion = {**sesion, "titulo": contenido.corto(sesion.get("titulo") or "", idioma_contenido, original)}
     conv = chat_service.conversacion(sesion["id"], g.usuario["id"])
     clases = " ".join("dua-" + a for a in activos)
     return render_template(
@@ -66,7 +84,10 @@ def sesion(sesion_id):
         formatos=FORMATOS_MVP,
         necesidades_dua=dua.NECESIDADES,
         lenguas_dua=dua.LENGUAS,
-        idioma_actual=idioma_actual,
+        idioma_actual=_(idioma_contenido),
+        idioma_contenido=idioma_contenido,
+        traducir_al_cargar=traducir_al_cargar,
+        voz_contenido=dua.voz_bcp47(idioma_contenido),
         body_dua=clases,
         mensajes=chat_service.mensajes(conv["id"]),
         cuota=chat_service.cuota_hoy(g.usuario["id"]),
@@ -97,7 +118,9 @@ def dua_traducir(sesion_id):
     if visto is None:
         return jsonify({"error": _("Sesión no disponible")}), 404
     cuerpo = request.get_json(silent=True) or {}
-    out = dua.adaptar_a_lengua(visto[0].get("texto_extraido") or "", cuerpo.get("idioma") or "")
+    out = dua.adaptar_a_lengua(
+        visto[0].get("texto_extraido") or "", cuerpo.get("idioma") or "", visto[0].get("idioma_original") or "es"
+    )
     return jsonify(out)
 
 
@@ -107,8 +130,13 @@ def imagen_educativa_json(sesion_id):
     visto = svc.sesion_visible(str(sesion_id), g.usuario["id"])
     if visto is None:
         return jsonify({"error": _("Sesión no disponible")}), 404
+    sesion, insc = visto
     try:
-        return jsonify(imagen_educativa.para_sesion(visto[0]))
+        out = imagen_educativa.para_sesion(sesion)
+        idioma = contenido.idioma_para_estudiante(sesion["id"], insc)
+        titulo = contenido.corto(sesion.get("titulo") or "", idioma, sesion.get("idioma_original") or "es")
+        out["alt"] = _("Imagen educativa del tema: {titulo}", titulo=titulo)
+        return jsonify(out)
     except Exception as exc:
         return jsonify({"estado": "error", "url": "", "alt": "", "error": str(exc)}), 500
 
@@ -119,8 +147,9 @@ def mediacion_json(sesion_id):
     visto = svc.sesion_visible(str(sesion_id), g.usuario["id"])
     if visto is None:
         return jsonify({"error": _("Sesión no disponible")}), 404
+    sesion, insc = visto
     try:
-        return jsonify(mediacion.para_sesion(visto[0]))
+        return jsonify(mediacion.para_sesion(sesion, contenido.idioma_para_estudiante(sesion["id"], insc)))
     except Exception as exc:
         return jsonify(
             {

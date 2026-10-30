@@ -56,6 +56,7 @@
 
 <section class="glass caja" id="panel-texto" role="tabpanel" aria-labelledby="tab-texto">
   <h2 id="texto">{{ _("Texto extraído") }}</h2>
+  {% if traducir_al_cargar %}<p class="mut">{{ _("Este es el texto original que escribiste o subiste. Cada estudiante lo ve traducido a su idioma; en «Formatos DUA» puedes ver la versión traducida.") }}</p>{% endif %}
   <pre class="texto">{{ sesion.texto_extraido or _('Aún no hay texto. Espera a que termine la extracción.') }}</pre>
 </section>
 
@@ -134,7 +135,10 @@
         root: "#form-dua-sim",
         preview: "#dua-preview",
         texto: texto,
-        traducirUrl: {{ url_for('panel.dua_traducir', sesion_id=sesion.id) | tojson }}
+        traducirUrl: {{ url_for('panel.dua_traducir', sesion_id=sesion.id) | tojson }},
+        traducirAlCargar: {{ traducir_al_cargar | tojson }},
+        idiomaInicial: {{ idioma_contenido | tojson }},
+        idiomaNombre: {{ _(idioma_contenido) | tojson }}
       });
     }
   });
