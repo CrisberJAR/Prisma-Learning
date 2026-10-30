@@ -1,8 +1,12 @@
-const CACHE = "prisma-v2";
+const CACHE = "prisma-v3";
 const PRECACHE = [
   "/offline",
   "/static/css/app.css",
   "/static/js/estudiante.js",
+  "/static/js/ui.js",
+  "/static/js/mates.js",
+  "/static/vendor/katex/katex.min.js",
+  "/static/vendor/katex/katex.min.css",
   "/static/js/pwa.js",
   "/static/manifest.json",
   "/static/icon.svg",

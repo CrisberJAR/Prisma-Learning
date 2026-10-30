@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Analítica") }} · {{ curso.nombre_curso }}{% endblock %}
 {% block contenido %}
-<p><a class="btn" href="{{ url_for('panel.curso', curso_id=curso.id) }}">{{ icono('arrow-left') }}{{ _("Volver al curso") }}</a></p>
+<p class="volver"><a href="{{ url_for('panel.curso', curso_id=curso.id) }}">{{ icono('arrow-left') }}{{ _("Volver al curso") }}</a></p>
 <section class="glass caja">
   <div class="titulo"><span class="ico-tile">{{ icono('chart') }}</span><h1>{{ _("Analítica") }} · {{ curso.nombre_curso }}</h1></div>
   <p class="mut">{{ _("{n} interacciones registradas. No se muestran nombres de estudiantes.", n=resumen.total_interacciones) }}</p>

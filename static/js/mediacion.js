@@ -26,6 +26,7 @@
     if (pauta && pautaTexto) {
       pautaTexto.hidden = false;
       pautaTexto.textContent = pauta;
+      if (window.PrismaMates) window.PrismaMates.pintar(pautaTexto);
       if (pautaEstado) pautaEstado.hidden = true;
     } else if (pautaEstado) {
       pautaEstado.hidden = false;
@@ -48,6 +49,7 @@
           );
         })
         .join("");
+      if (window.PrismaMates) glosLista.querySelectorAll("li").forEach(window.PrismaMates.pintar);
       if (glosEstado) glosEstado.hidden = true;
     } else if (glosEstado) {
       glosEstado.hidden = false;

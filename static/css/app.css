@@ -67,7 +67,7 @@ code{font-family:ui-monospace,"Cascadia Code",Consolas,monospace}
 /* ---------- Superficies ---------- */
 .glass{background:var(--glass);-webkit-backdrop-filter:blur(14px) saturate(1.5);backdrop-filter:blur(14px) saturate(1.5);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-2)}
 .caja{padding:1.5rem}
-.wrap{max-width:72rem;margin:0 auto;padding:1.5rem 1.25rem 2rem;display:flex;flex-direction:column;gap:1.25rem}
+.wrap{max-width:72rem;margin:0 auto;padding:1.25rem 1.25rem 2rem;display:flex;flex-direction:column;gap:1.1rem}
 [role=tabpanel]{display:flex;flex-direction:column;gap:1.25rem}
 .row{display:flex;gap:1rem;align-items:center;flex-wrap:wrap;justify-content:space-between}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
@@ -253,13 +253,13 @@ footer.pie{text-align:center;color:var(--mut);font-size:.85rem;padding:1.5rem 1r
 .wrap>*{animation:entra .5s var(--ease) both}
 .wrap>:nth-child(2){animation-delay:.05s}.wrap>:nth-child(3){animation-delay:.1s}.wrap>:nth-child(4){animation-delay:.15s}
 .wrap>:nth-child(5){animation-delay:.2s}.wrap>:nth-child(n+6){animation-delay:.25s}
-.tarjetas>*,.lista>li,.med-lista>li,.ejercicios-lista>li,.pildoras>li,.dua-mapa>*,#editor-ejercicios>fieldset,#lista-estudiantes>div{animation:entra .5s var(--ease) both}
-:is(.tarjetas,.lista,.med-lista,.ejercicios-lista,.pildoras,.dua-mapa,#editor-ejercicios,#lista-estudiantes)>:nth-child(2){animation-delay:.05s}
-:is(.tarjetas,.lista,.med-lista,.ejercicios-lista,.pildoras,.dua-mapa,#editor-ejercicios,#lista-estudiantes)>:nth-child(3){animation-delay:.1s}
-:is(.tarjetas,.lista,.med-lista,.ejercicios-lista,.pildoras,.dua-mapa,#editor-ejercicios,#lista-estudiantes)>:nth-child(4){animation-delay:.15s}
-:is(.tarjetas,.lista,.med-lista,.ejercicios-lista,.pildoras,.dua-mapa,#editor-ejercicios,#lista-estudiantes)>:nth-child(5){animation-delay:.2s}
-:is(.tarjetas,.lista,.med-lista,.ejercicios-lista,.pildoras,.dua-mapa,#editor-ejercicios,#lista-estudiantes)>:nth-child(6){animation-delay:.25s}
-:is(.tarjetas,.lista,.med-lista,.ejercicios-lista,.pildoras,.dua-mapa,#editor-ejercicios,#lista-estudiantes)>:nth-child(n+7){animation-delay:.3s}
+.tarjetas>*,.filas>*,.cursos>*,.lista>li,.med-lista>li,.ejercicios-lista>li,.pildoras>li,.dua-mapa>*,#editor-ejercicios>fieldset{animation:entra .5s var(--ease) both}
+:is(.tarjetas,.filas,.cursos,.lista,.med-lista,.ejercicios-lista,.pildoras,.dua-mapa,#editor-ejercicios)>:nth-child(2){animation-delay:.05s}
+:is(.tarjetas,.filas,.cursos,.lista,.med-lista,.ejercicios-lista,.pildoras,.dua-mapa,#editor-ejercicios)>:nth-child(3){animation-delay:.1s}
+:is(.tarjetas,.filas,.cursos,.lista,.med-lista,.ejercicios-lista,.pildoras,.dua-mapa,#editor-ejercicios)>:nth-child(4){animation-delay:.15s}
+:is(.tarjetas,.filas,.cursos,.lista,.med-lista,.ejercicios-lista,.pildoras,.dua-mapa,#editor-ejercicios)>:nth-child(5){animation-delay:.2s}
+:is(.tarjetas,.filas,.cursos,.lista,.med-lista,.ejercicios-lista,.pildoras,.dua-mapa,#editor-ejercicios)>:nth-child(6){animation-delay:.25s}
+:is(.tarjetas,.filas,.cursos,.lista,.med-lista,.ejercicios-lista,.pildoras,.dua-mapa,#editor-ejercicios)>:nth-child(n+7){animation-delay:.3s}
 /* Esqueleto de carga para textos "Preparando…" de la IA */
 .cargando{display:inline-block;color:transparent!important;border-radius:8px;min-width:14rem;user-select:none;
   background:linear-gradient(90deg,#e2e8f0 0,#f1f5f9 40%,#e2e8f0 80%) 0 0/260% 100%;animation:destello 1.4s ease-in-out infinite}
@@ -344,7 +344,7 @@ details.gestion.peligro[open]{border-color:var(--err-line)}
 .dua-checks{background:var(--surface-2)}
 .dua-checks .mut{display:block;margin:.1rem 0 .45rem 2.3rem;font-size:.86rem}
 .dua-checks [data-dua-idioma-estado]{margin:.5rem 0 0}
-.dua-sim-grid{display:grid;grid-template-columns:minmax(16rem,1fr) minmax(0,1.4fr);gap:1.25rem;align-items:start}
+.dua-sim-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:1.25rem;align-items:start}
 .dua-preview{min-height:12rem;padding:1.3rem;border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:var(--sh-1);line-height:1.7}
 .dua-preview .texto{max-height:none}
 .texto.md{white-space:normal}
@@ -381,14 +381,190 @@ details.gestion.peligro[open]{border-color:var(--err-line)}
 .med-lista li{padding:.8rem 1rem;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--mut);line-height:1.5}
 .med-lista strong{color:var(--ink);font-weight:700}
 
+/* ---------- Orden de página: encabezados sin caja, listas en filas, acciones plegadas ---------- */
+.volver{margin:0 0 -.7rem}
+.volver a{display:inline-flex;align-items:center;gap:.4rem;min-height:2.75rem;color:var(--mut);font-size:.92rem;text-decoration:none}
+.volver a:hover{color:var(--pri-700)}
+.pagina-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.pagina-cab>div{min-width:0;flex:1 1 20rem}
+.pagina-cab h1{margin:0;font-size:clamp(1.5rem,3vw,2rem)}
+.pagina-cab .mut{margin:.35rem 0 0;max-width:48rem}
+.pagina-cab .titulo+.mut{margin-top:.5rem}
+.curso-titulo{margin:0}
+.curso-titulo+.mut{margin-top:.2rem}
+.cuenta{display:inline-grid;place-items:center;min-width:1.45rem;height:1.45rem;padding:0 .35rem;border-radius:99px;font-size:.76rem;font-weight:700;background:var(--surface-3);color:var(--pri-700)}
+.ico-tile.chico{width:2.3rem;height:2.3rem;border-radius:11px}
+.ico-tile.chico .ico{width:1.1rem;height:1.1rem}
+
+.barra-lista{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-start}
+.barra-lista>.buscador{flex:1 1 18rem;margin:0}
+details.gestion.accion{flex:0 0 auto;margin:0;border:0;background:none;box-shadow:none}
+details.gestion.accion[open]{flex:1 0 100%;order:-1}
+details.gestion.accion>summary{width:fit-content;min-height:2.85rem;padding:0 1.1rem;border-radius:12px;color:#fff;background:linear-gradient(135deg,#6366f1 0%,#4f46e5 45%,#4338ca 100%);box-shadow:var(--glow)}
+details.gestion.accion>summary:hover{color:#fff}
+details.gestion.accion>summary::after{display:none}
+details.gestion.accion>:not(summary){padding:1.25rem;margin-top:.75rem}
+:is(.tema-contraste,body.dua-baja_vision) details.gestion.accion>summary{background:#ffe600;color:#000}
+
+.filas{display:grid;gap:.55rem}
+.filas.columnas{grid-template-columns:repeat(auto-fill,minmax(19rem,1fr));margin-top:.85rem}
+.fila{display:flex;align-items:center;gap:.8rem;min-height:3.6rem;padding:.6rem .9rem;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);color:var(--ink);font-weight:400;text-decoration:none;transition:transform .2s var(--ease),border-color .2s,box-shadow .2s}
+.fila.glass{box-shadow:var(--sh-1)}
+.fila:hover{transform:translateY(-1px);border-color:#a5b4fc;box-shadow:var(--sh-2);color:var(--ink)}
+.fila-texto{flex:1;min-width:0}
+.fila-texto b{display:block;font:600 1rem/1.3 var(--hf);overflow-wrap:anywhere}
+.fila-texto small{display:block;overflow-wrap:anywhere}
+.fila-ir{color:var(--mut-2);transition:transform .2s var(--ease)}
+.fila:hover .fila-ir{transform:translateX(3px);color:var(--pri)}
+
+.cursos{display:grid;grid-template-columns:repeat(auto-fill,minmax(20rem,1fr));gap:.75rem}
+.curso{display:flex;align-items:flex-start;gap:.85rem;padding:.95rem 1rem;color:var(--ink);font-weight:400;text-decoration:none;box-shadow:var(--sh-1);transition:transform .2s var(--ease),border-color .2s,box-shadow .2s}
+.curso:hover{transform:translateY(-2px);border-color:#a5b4fc;box-shadow:var(--sh-2);color:var(--ink)}
+.curso-letra{flex:none;width:3rem;height:3rem;border-radius:14px;display:grid;place-items:center;font:800 1.25rem var(--hf);color:#fff;background:linear-gradient(135deg,#6366f1,#4338ca)}
+.curso-letra.c1{background:linear-gradient(135deg,#10b981,#047857)}
+.curso-letra.c2{background:linear-gradient(135deg,#f59e0b,#c2410c)}
+.curso-letra.c3{background:linear-gradient(135deg,#0ea5e9,#1d4ed8)}
+.curso-letra.c4{background:linear-gradient(135deg,#ec4899,#9d174d)}
+.curso-letra.c5{background:linear-gradient(135deg,#8b5cf6,#5b21b6)}
+.curso-info{flex:1;min-width:0}
+.curso-info h3{margin:0 0 .1rem;font-size:1.05rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.curso-info p{margin:0;font-size:.85rem;line-height:1.45;color:var(--mut);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.curso-info .curso-datos{margin-top:.3rem;font-weight:600;color:var(--ink-2)}
+
+details.gestion.estudiante{margin:0;box-shadow:var(--sh-1)}
+details.gestion.estudiante>summary{min-height:3.6rem;padding:.6rem .9rem;gap:.8rem;flex-wrap:wrap}
+.estudiante .avatar{flex:none;box-shadow:none}
+.estudiante-chips{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:flex-end;max-width:60%}
+details.gestion.estudiante>summary::after{margin-left:0}
+.est-acciones form{margin:0}
+
+/* ---------- Menú de la cuenta ---------- */
+.menu-cuenta{position:relative}
+.menu-cuenta>summary{list-style:none;display:flex;align-items:center;gap:.5rem;min-height:2.75rem;padding:.2rem .7rem .2rem .3rem;border-radius:12px;cursor:pointer;color:#e0e7ff;font-size:.9rem;font-weight:600;transition:background .2s}
+.menu-cuenta>summary::-webkit-details-marker{display:none}
+.menu-cuenta>summary:hover,.menu-cuenta[open]>summary{background:rgba(255,255,255,.12)}
+.menu-lista{position:absolute;right:0;top:calc(100% + .5rem);min-width:14.5rem;display:grid;gap:.15rem;padding:.4rem;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--line);box-shadow:var(--sh-3);animation:entra .2s var(--ease) both}
+.menu-item{display:flex;align-items:center;gap:.6rem;width:100%;min-height:2.75rem;padding:0 .75rem;border:0;border-radius:10px;background:none;color:var(--ink-2);font-size:.92rem;font-weight:600;text-align:left;text-decoration:none;cursor:pointer}
+.menu-item:hover{background:var(--pri-soft);color:var(--pri-700)}
+
+/* ---------- Clase del estudiante: lectura al centro, herramientas bajo demanda ---------- */
+.wrap>.clase,.wrap>.barra-clase{animation:none}
+.barra-clase{position:sticky;top:5.4rem;z-index:20;display:flex;gap:.35rem;width:fit-content;max-width:100%;padding:.35rem;border-radius:16px}
+.barra-clase .btn{box-shadow:none;border-color:transparent;background:none}
+.barra-clase .btn:hover{background:var(--surface-2)}
+.barra-clase .btn[aria-expanded=true]{background:var(--pri-soft);border-color:var(--pri);color:var(--pri-700)}
+.clase{display:grid;grid-template-columns:minmax(0,1fr);gap:1.25rem;align-items:start}
+.clase.con-panel{grid-template-columns:minmax(0,1fr) 25rem}
+.clase-lectura{display:flex;flex-direction:column;gap:1.25rem;width:100%;max-width:48rem;margin:0 auto}
+.clase.con-panel .clase-lectura{margin:0}
+/* Título y herramientas se alinean con la columna de lectura */
+.wrap:has(.clase)>:is(.volver,.pagina-cab,.barra-clase){margin-inline:max(0px,calc((100% - 48rem)/2))}
+.wrap:has(.clase.con-panel)>:is(.volver,.pagina-cab,.barra-clase){margin-inline:0}
+.clase-panel{padding:1.25rem}
+.js .clase-panel{display:none;position:sticky;top:9.2rem;max-height:calc(100vh - 10.2rem);overflow:auto}
+.js .clase-panel.activo{display:block;animation:entra .25s var(--ease) both}
+.clase-panel:focus{outline:none}
+.panel-cab{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.6rem}
+.panel-cab h2{margin:0;font-size:1.12rem}
+.panel-cerrar{flex:none;min-width:2.75rem;padding:0;box-shadow:none}
+html:not(.js) .panel-cerrar,html:not(.js) .barra-clase{display:none}
+.clase-panel .dua-checks{padding:.4rem .8rem .9rem}
+.clase-panel .dua-opciones{grid-template-columns:1fr}
+.clase-panel .med-bloque{grid-template-columns:1fr;margin:.4rem 0 0}
+.clase-panel .med-bloque>.glass{padding:0;border:0;border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.clase-panel .acciones .btn{white-space:normal}
+.formato-leccion .img-edu-card{margin:0 0 1.25rem;padding:0;border:0;border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.formato-leccion .img-edu-card>h3{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.formato-leccion .img-edu-figura{margin:0;max-width:34rem;margin-inline:auto}
+.formato-leccion .dua-preview{min-height:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;font-size:1.05rem;line-height:1.75}
+.clase-fin{display:flex;flex-direction:column;gap:.75rem}
+.clase-ejercicios{display:flex;align-items:center;justify-content:space-between;gap:.75rem 1rem;flex-wrap:wrap;padding-top:.75rem;border-top:1px solid var(--line)}
+.clase-ejercicios p{margin:0;flex:1 1 16rem}
+
+/* ---------- Necesidades DUA en columnas ---------- */
+.dua-opciones{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:.2rem 1.25rem}
+.dua-opciones p{margin:0}
+.dua-idioma{margin-top:.5rem}
+.dua-idioma label{margin-top:.5rem}
+.dua-idioma-fila{display:flex;flex-wrap:wrap;gap:.5rem}
+.dua-idioma-fila input{flex:1 1 12rem;width:auto}
+.dua-idioma>.mut{display:block;margin:.35rem 0 0;font-size:.86rem}
+
+/* ---------- Sesión del docente ---------- */
+.apoyos-docente{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.25rem;align-items:start}
+/* La imagen acompaña al leer el glosario: se queda a la vista en vez de dejar un hueco debajo. */
+.apoyos-docente .img-edu-card{margin:0;position:sticky;top:5.6rem}
+.apoyos-docente .img-edu img{max-height:calc(100vh - 15rem);object-fit:contain}
+.apoyos-docente .med-bloque{grid-template-columns:1fr;gap:1.25rem;margin:0}
+/* Glosario como lista ligera: una caja por término lo alargaba sin aportar. */
+:is(.apoyos-docente,.clase-panel) .med-lista{gap:0;margin-top:.5rem}
+:is(.apoyos-docente,.clase-panel) .med-lista li{padding:.6rem 0;border:0;border-top:1px solid var(--line);border-radius:0;background:none;font-size:.94rem}
+:is(.apoyos-docente,.clase-panel) .med-lista li:first-child{border-top:0}
+#panel-texto .texto{max-height:none}
+
+/* ---------- Simulador: la vista manda y los controles flotan ---------- */
+.sim-barra{position:sticky;top:5.4rem;z-index:20;display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin:.9rem 0;padding:.5rem .6rem;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);box-shadow:var(--sh-1)}
+.sim-chips{display:flex;flex:1 1 16rem;flex-wrap:wrap;align-items:center;gap:.35rem;min-width:0;padding-left:.3rem;font-size:.92rem}
+.sim-chip{min-height:2rem;cursor:pointer;transition:background .2s,color .2s}
+.sim-chip:hover{background:var(--err-soft);border-color:var(--err-line);color:var(--err)}
+.sim-chip .ico{width:.85rem;height:.85rem}
+#sim-comparar[aria-pressed=true]{animation:none;background:var(--pri-soft);border-color:var(--pri);color:var(--pri-700)}
+.sim-vista{display:grid;grid-template-columns:minmax(0,1fr);gap:1rem;align-items:start}
+.sim-vista.comparando{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sim-columna{min-width:0}
+.sim-columna h3{margin:0 0 .5rem;color:var(--mut);font-size:.9rem}
+.sim-vista:not(.comparando) .sim-columna-original,.sim-vista:not(.comparando) .sim-titulo-adaptada{display:none}
+.sim-vista .texto{max-height:none}
+.sim-flotante{position:fixed;right:1.25rem;bottom:1.25rem;z-index:35;width:min(23rem,calc(100vw - 2.5rem));max-height:calc(100vh - 7rem);overflow:auto;padding:1.1rem 1.25rem;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);box-shadow:var(--sh-3);animation:entra .25s var(--ease) both}
+/* Con el panel abierto, el contenido se aparta para que el cambio se vea entero: ancho del panel + margen - lo que ya sobra a la derecha. */
+@media(min-width:821px){#simulador.con-flotante{padding-right:max(1.5rem,calc(24.5rem - max(0px,(100vw - 72rem)/2)))}}
+.sim-flotante .dua-checks>.mut{display:none}
+.sim-flotante .dua-opciones .mut{margin-bottom:.25rem;font-size:.8rem;line-height:1.35}
+.sim-flotante:focus{outline:none}
+.sim-flotante .dua-checks{margin:0;padding:0;border:0;background:none}
+.sim-flotante .dua-checks legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.sim-flotante .dua-opciones{grid-template-columns:1fr}
+
+/* ---------- Fórmulas ---------- */
+.katex{font-size:1.06em}
+.katex-display{margin:.7rem 0;padding:.2rem 0;overflow-x:auto;overflow-y:hidden}
+
 /* ---------- Adaptable ---------- */
 @media(max-width:900px){.med-bloque{grid-template-columns:1fr}}
 @media(max-width:820px){
-  .split,.g2,.dua-sim-grid{grid-template-columns:1fr}.sticky{position:static}
-  .who span,.btn .lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-  header.top{gap:.4rem}.caja{padding:1.15rem}.wrap{padding:1.1rem .85rem 2rem}
+  .split,.g2,.dua-sim-grid,.apoyos-docente{grid-template-columns:1fr}.sticky{position:static}
+  .who span,.btn .lbl,.menu-nombre,.marca small{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+  header.top{position:relative;top:0;gap:.4rem;flex-wrap:nowrap}.caja{padding:1.15rem}.wrap{padding:1.1rem .85rem 2rem}
+  .menu-cuenta>summary{padding:.2rem}
+  .selector-idioma select{max-width:8rem}
+  .estudiante-chips{max-width:100%;justify-content:flex-start;order:3;flex-basis:100%}
+  .apoyos-docente .img-edu-card{position:static}
+  .apoyos-docente .img-edu img{max-height:none}
+  .cursos,.filas.columnas{grid-template-columns:minmax(0,1fr)}
+  .tabs{width:100%}
+  /* Clase: herramientas abajo, al alcance del pulgar; cada panel ocupa la pantalla. */
+  .barra-clase{position:fixed;top:auto;left:.6rem;right:.6rem;bottom:calc(.6rem + env(safe-area-inset-bottom,0px));z-index:40;width:auto;background:var(--surface);box-shadow:var(--sh-3)}
+  .wrap:has(.clase)>.barra-clase{margin-inline:0}
+  .barra-clase .btn{flex:1 1 0;min-width:0;padding:.4rem .3rem;font-size:.86rem}
+  body:has(.barra-clase) footer.pie{padding-bottom:6rem}
+  .clase.con-panel{grid-template-columns:minmax(0,1fr)}
+  .js .clase-panel{position:fixed;inset:0;z-index:60;max-height:none;border:0;border-radius:0;background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}
+  /* Ajustes como hoja inferior: se marca algo y se ve el cambio arriba, sin cerrar. */
+  .js .clase-panel.hoja{top:auto;max-height:58vh;border-top:1px solid var(--line-2);border-radius:var(--r) var(--r) 0 0;box-shadow:var(--sh-3)}
+  .js .clase-panel.hoja>.mut{display:none}
+  /* Simulador en móvil: barra de una línea y hoja baja, para que la vista quede a la vista. */
+  .sim-barra{top:.5rem;flex-wrap:nowrap}
+  .sim-chips{flex:1 1 0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .sim-chip,.sim-chips .mut{flex:none;white-space:nowrap}
+  .sim-chips .mut{white-space:normal;flex:1;font-size:.82rem;line-height:1.3}
+  #sim-comparar{display:none}
+  .sim-flotante{left:0;right:0;bottom:0;width:auto;max-height:50vh;border-width:1px 0 0;border-radius:var(--r) var(--r) 0 0}
+  .sim-vista.comparando{grid-template-columns:minmax(0,1fr)}
+  body.panel-abierto{overflow:hidden}
   .ejercicios-lista>li{padding-left:1.15rem;padding-top:3.4rem}.ejercicios-lista>li::before{top:1rem;left:1.15rem}
 }
+
+@media(max-width:480px){.tabs button{padding:0 .6rem;font-size:.92rem}.tabs button .ico{display:none}}
 
 /* ==========================================================================
    Accesibilidad: movimiento reducido y modos DUA

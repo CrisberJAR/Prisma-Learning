@@ -2,77 +2,96 @@
 {% block title %}{{ sesion.titulo }} · Prisma{% endblock %}
 {% block body_class %}{{ body_dua }}{% endblock %}
 {% block contenido %}
-<p><a class="btn" href="{{ url_for('estudiante.mochila') }}">{{ icono('arrow-left') }}{{ _("Mi mochila") }}</a></p>
-<section class="glass caja">
-  <div class="titulo"><span class="ico-tile">{{ icono('book') }}</span><h1>{{ sesion.titulo }}</h1></div>
-  <p class="mut">{{ _("La clase se muestra con los ajustes que tu docente configuró para ti. Si quieres ver el material de otra forma, usa los ajustes del panel lateral: solo aplican en esta sesión y no cambian tu perfil del curso.") }}</p>
-</section>
+<p class="volver"><a href="{{ url_for('estudiante.mochila') }}">{{ icono('arrow-left') }}{{ _("Mi mochila") }}</a></p>
+<div class="pagina-cab"><h1>{{ sesion.titulo }}</h1></div>
 
-<div class="split">
-  <div>
+<nav class="barra-clase glass" data-barra-clase aria-label="{{ _('Herramientas de la clase') }}">
+  <button type="button" class="btn" data-panel-abrir="panel-ajustes" aria-controls="panel-ajustes" aria-expanded="false">{{ icono('sliders') }}{{ _("Ajustes") }}</button>
+  <button type="button" class="btn" data-panel-abrir="panel-apoyo" aria-controls="panel-apoyo" aria-expanded="false">{{ icono('bulb') }}{{ _("Apoyo") }}</button>
+  <button type="button" class="btn" data-panel-abrir="panel-tutor" aria-controls="panel-tutor" aria-expanded="false">{{ icono('message') }}{{ _("Tutor") }}</button>
+</nav>
+
+<div class="clase" data-clase>
+  <div class="clase-lectura">
     <article class="glass caja formato-leccion" aria-labelledby="t-leccion">
-      <h2 id="t-leccion" class="titulo">{{ icono('sparkles') }} {{ _("Clase adaptada") }}</h2>
+      <h2 id="t-leccion" class="sr-only">{{ _("Clase adaptada") }}</h2>
       {% include "_imagen_educativa.html" %}
-      {% include "_mediacion.html" %}
       <div id="dua-preview" class="dua-preview" aria-live="polite"></div>
     </article>
-    {% if ejercicios_estado %}
-    <article class="glass caja" aria-labelledby="t-ejercicios">
-      <div class="titulo"><span class="ico-tile ok">{{ icono('clipboard') }}</span><h2 id="t-ejercicios">{{ _("Ejercicios de la sesión") }}</h2></div>
-      {% if ejercicios_estado.intento %}
-        {% set it = ejercicios_estado.intento %}
-        <p>{% if it.puntaje is not none %}{{ _("Ya los resolviste: obtuviste {p}%.", p=it.puntaje | round | int) }}{% else %}{{ _("Ya enviaste tus respuestas.") }}{% endif %}</p>
-        <p><a class="btn" href="{{ url_for('estudiante.resolver_ejercicios', sesion_id=sesion.id) }}">{{ icono('award') }}{{ _("Ver mi resultado") }}</a></p>
-      {% else %}
-        <p>{{ _("Tu docente preparó {n} ejercicios para comprobar lo que aprendiste.", n=ejercicios_estado.n) }}</p>
-        <p><a class="btn p" href="{{ url_for('estudiante.resolver_ejercicios', sesion_id=sesion.id) }}">{{ icono('clipboard') }}{{ _("Resolver ejercicios") }}</a></p>
+
+    <section class="glass caja clase-fin" aria-label="{{ _('Al terminar la clase') }}">
+      <label class="chk">
+        <input type="checkbox" id="marcar-completado">
+        {{ _("Marqué esta sesión como completada") }}
+      </label>
+      {% if ejercicios_estado %}
+      <div class="clase-ejercicios" id="t-ejercicios">
+        {% if ejercicios_estado.intento %}
+          {% set it = ejercicios_estado.intento %}
+          <p>{% if it.puntaje is not none %}{{ _("Ya los resolviste: obtuviste {p}%.", p=it.puntaje | round | int) }}{% else %}{{ _("Ya enviaste tus respuestas.") }}{% endif %}</p>
+          <a class="btn" href="{{ url_for('estudiante.resolver_ejercicios', sesion_id=sesion.id) }}">{{ icono('award') }}{{ _("Ver mi resultado") }}</a>
+        {% else %}
+          <p>{{ _("Tu docente preparó {n} ejercicios para comprobar lo que aprendiste.", n=ejercicios_estado.n) }}</p>
+          <a class="btn p" href="{{ url_for('estudiante.resolver_ejercicios', sesion_id=sesion.id) }}">{{ icono('clipboard') }}{{ _("Resolver ejercicios") }}</a>
+        {% endif %}
+      </div>
       {% endif %}
-    </article>
-    {% endif %}
+    </section>
   </div>
 
-  <div class="sticky sesion-lateral">
-    <nav class="glass caja menu-autonomia" aria-label="{{ _('Ajustes de lectura / DUA') }}">
-      <form method="post" action="{{ url_for('estudiante.vista', sesion_id=sesion.id) }}" id="form-dua-est">
-        {% with nombre_campo='activos', seleccionadas=activos, id_idioma='dua-idioma-est', idioma_actual=idioma_actual, leyenda=_('Ajustes de lectura / DUA (solo esta sesión)') %}
-        {% include "_dua_necesidades.html" %}
-        {% endwith %}
-        <p><button class="btn p" type="submit">{{ icono('check') }}{{ _("Aplicar en esta sesión") }}</button></p>
-      </form>
-    </nav>
+  <aside class="clase-panel hoja glass" id="panel-ajustes" tabindex="-1" aria-labelledby="panel-ajustes-t">
+    <div class="panel-cab">
+      <h2 id="panel-ajustes-t">{{ _("Ajustes de lectura") }}</h2>
+      <button type="button" class="btn panel-cerrar" data-panel-cerrar aria-label="{{ _('Cerrar') }}">{{ icono('x') }}</button>
+    </div>
+    <p class="mut">{{ _("La clase se muestra con los ajustes que tu docente configuró para ti. Si quieres ver el material de otra forma, usa los ajustes del panel lateral: solo aplican en esta sesión y no cambian tu perfil del curso.") }}</p>
+    <form class="menu-autonomia" method="post" action="{{ url_for('estudiante.vista', sesion_id=sesion.id) }}" id="form-dua-est">
+      {% with nombre_campo='activos', seleccionadas=activos, id_idioma='dua-idioma-est', idioma_actual=idioma_actual, leyenda=_('Ajustes de lectura / DUA (solo esta sesión)') %}
+      {% include "_dua_necesidades.html" %}
+      {% endwith %}
+      <p class="acciones"><button class="btn p" type="submit">{{ icono('check') }}{{ _("Aplicar en esta sesión") }}</button></p>
+    </form>
+  </aside>
 
-    <aside class="glass caja" aria-labelledby="tutor">
-      <div class="titulo"><span class="ico-tile">{{ icono('message') }}</span><h2 id="tutor">{{ _("Tutor de esta sesión") }}</h2></div>
-      <p>{{ _("Solo responde con el material. Es una IA y puede equivocarse.") }} <strong>{{ _("El tutor requiere conexión a internet.") }}</strong> {{ _("{n} / {max} mensajes hoy.", n=cuota, max=cuota_max) }}</p>
+  <aside class="clase-panel glass" id="panel-apoyo" tabindex="-1" aria-labelledby="panel-apoyo-t">
+    <div class="panel-cab">
+      <h2 id="panel-apoyo-t">{{ _("Apoyo para estudiar") }}</h2>
+      <button type="button" class="btn panel-cerrar" data-panel-cerrar aria-label="{{ _('Cerrar') }}">{{ icono('x') }}</button>
+    </div>
+    {% include "_mediacion.html" %}
+  </aside>
+
+  <aside class="clase-panel glass" id="panel-tutor" tabindex="-1" aria-labelledby="tutor">
+    <div class="panel-cab">
+      <h2 id="tutor">{{ _("Tutor de esta sesión") }}</h2>
+      <button type="button" class="btn panel-cerrar" data-panel-cerrar aria-label="{{ _('Cerrar') }}">{{ icono('x') }}</button>
+    </div>
+    <p class="mut">{{ _("Solo responde con el material. Es una IA y puede equivocarse.") }} {{ _("El tutor requiere conexión a internet.") }} {{ _("{n} / {max} mensajes hoy.", n=cuota, max=cuota_max) }}</p>
+    <div id="chat-log" class="chat-log" aria-live="polite" aria-relevant="additions" aria-busy="false">
+      {% for m in mensajes %}
+        <div class="msg {% if m.rol == 'user' %}u{% endif %}" data-mates>{{ m.contenido }}</div>
+      {% endfor %}
+    </div>
+    <form id="form-chat">
       <p>
-        <label class="chk">
-          <input type="checkbox" id="marcar-completado">
-          {{ _("Marqué esta sesión como completada") }}
-        </label>
+        <label for="pregunta">{{ _("Tu pregunta") }}</label>
+        <textarea id="pregunta" name="pregunta" rows="3" required aria-describedby="tutor chat-estado"></textarea>
       </p>
-      <div id="chat-log" class="chat-log" aria-live="polite" aria-relevant="additions" aria-busy="false">
-        {% for m in mensajes %}
-          <div class="msg {% if m.rol == 'user' %}u{% endif %}">{{ m.contenido }}</div>
-        {% endfor %}
-      </div>
-      <form id="form-chat">
-        <p>
-          <label for="pregunta">{{ _("Tu pregunta") }}</label>
-          <textarea id="pregunta" name="pregunta" rows="3" required aria-describedby="tutor chat-estado"></textarea>
-        </p>
-        <p class="acciones">
-          <button class="btn p" type="submit">{{ icono('send') }}{{ _("Preguntar") }}</button>
-          <button class="btn" type="button" id="btn-duda">{{ icono('help') }}{{ _("Enviar esta duda a mi profesor") }}</button>
-          <button class="btn" type="button" id="btn-voz" aria-pressed="false">{{ icono('mic') }}{{ _("Dictar") }}</button>
-          <span class="dua-audio tts-tutor" id="tts-tutor">
+      <p class="acciones">
+        <button class="btn p" type="submit">{{ icono('send') }}{{ _("Preguntar") }}</button>
+        <button class="btn" type="button" id="btn-voz" aria-pressed="false">{{ icono('mic') }}{{ _("Dictar") }}</button>
+        <span class="dua-audio tts-tutor" id="tts-tutor">
           <button class="btn" type="button" id="btn-leer" data-dua-hablar>{{ icono('volume') }}{{ _("Escuchar respuesta") }}</button>
           <button class="btn" type="button" id="btn-pausar-lectura" data-dua-pausar hidden>{{ icono('pause') }}{{ _("Pausar") }}</button>
           <button class="btn p" type="button" id="btn-continuar-lectura" data-dua-continuar hidden>{{ icono('play') }}{{ _("Continuar") }}</button>
           <button class="btn d" type="button" id="btn-detener-lectura" data-dua-parar hidden>{{ icono('stop') }}{{ _("Detener") }}</button>
         </span>
-        </p>
-      </form>
-      <p id="chat-estado" role="status"></p>
+        <button class="btn" type="button" id="btn-duda">{{ icono('help') }}{{ _("Enviar esta duda a mi profesor") }}</button>
+      </p>
+    </form>
+    <p id="chat-estado" role="status"></p>
+    <details class="gestion peligro">
+      <summary>{{ icono('trash') }}{{ _("Borrar mi chat de esta sesión") }}</summary>
       <form method="post" action="{{ url_for('estudiante.borrar_chat', sesion_id=sesion.id) }}">
         <p>
           <label class="chk">
@@ -82,13 +101,14 @@
         </p>
         <p><button class="btn d" type="submit">{{ icono('trash') }}{{ _("Borrar mi chat de esta sesión") }}</button></p>
       </form>
-    </aside>
-  </div>
+    </details>
+  </aside>
 </div>
 <script>window.PRISMA_VOZ_CONTENIDO = {{ voz_contenido | tojson }};</script>
 <script type="application/json" id="dua-texto">{{ (sesion.texto_extraido or '') | tojson }}</script>
 {% endblock %}
 {% block scripts %}
+{% include "_mates.html" %}
 <script src="{{ url_for('static', filename='js/imagen_edu.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/mediacion.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/dua.js') }}" defer></script>

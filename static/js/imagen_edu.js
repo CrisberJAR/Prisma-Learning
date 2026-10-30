@@ -13,6 +13,12 @@
     caja.classList.add("img-edu-contraste");
   }
 
+  // Sin imagen no queda el recuadro de carga: solo el mensaje.
+  function sinImagen() {
+    var figura = img.closest("figure");
+    if (figura) figura.hidden = true;
+  }
+
   function mostrar(url, alt) {
     img.alt = alt || t("Imagen educativa del tema");
     img.onload = function () {
@@ -20,6 +26,7 @@
       if (estado) estado.hidden = true;
     };
     img.onerror = function () {
+      sinImagen();
       if (estado) {
         estado.hidden = false;
         estado.textContent = t("No se pudo cargar la ilustración. Recarga la página para reintentar.");
@@ -42,6 +49,7 @@
         mostrar(j.url, j.alt);
         return;
       }
+      sinImagen();
       if (estado) {
         if (j && j.estado === "sin_texto") {
           estado.textContent = t("Cuando haya texto de la clase se generará la ilustración.");
@@ -53,6 +61,7 @@
       }
     })
     .catch(function () {
+      sinImagen();
       if (estado) estado.textContent = t("No se pudo generar la ilustración ahora. Recarga la página.");
     });
 

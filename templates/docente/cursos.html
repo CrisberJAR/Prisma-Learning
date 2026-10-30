@@ -1,53 +1,60 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Cursos") }} · Prisma{% endblock %}
 {% block contenido %}
-<section class="glass caja">
-  <div class="titulo"><span class="ico-tile">{{ icono('cap') }}</span><h1>{{ _("Tus cursos") }}</h1></div>
-  <p class="mut">{{ _("Crea un curso y sube materiales. Cada formato DUA se revisa antes de publicar.") }}</p>
-  <form method="post" action="{{ url_for('panel.crear_curso') }}">
-    <h2 class="titulo">{{ icono('plus') }} {{ _("Crear curso") }}</h2>
-    <div class="g2">
+<div class="pagina-cab">
+  <div>
+    <div class="titulo"><span class="ico-tile">{{ icono('cap') }}</span><h1>{{ _("Tus cursos") }}</h1></div>
+    <p class="mut">{{ _("Crea un curso y sube materiales. Cada formato DUA se revisa antes de publicar.") }}</p>
+  </div>
+</div>
+<div class="barra-lista">
+  <details class="gestion accion" {% if not cursos and not q %}open{% endif %}>
+    <summary>{{ icono('plus') }}{{ _("Crear curso") }}</summary>
+    <form class="glass caja" method="post" action="{{ url_for('panel.crear_curso') }}">
+      <div class="g2">
+        <p>
+          <label for="nombre">{{ _("Nombre del curso") }}</label>
+          <input id="nombre" name="nombre" type="text" required maxlength="200">
+        </p>
+        <p>
+          <label for="nivel_educativo">{{ _("Nivel educativo (CINE / UNESCO)") }}</label>
+          <select id="nivel_educativo" name="nivel_educativo" required>
+            <option value="" disabled selected>{{ _("Elige el nivel") }}</option>
+            {% for n in niveles_cine %}
+            <option value="{{ n.codigo }}">{{ _(n.etiqueta) }}</option>
+            {% endfor %}
+          </select>
+        </p>
+      </div>
       <p>
-        <label for="nombre">{{ _("Nombre del curso") }}</label>
-        <input id="nombre" name="nombre" type="text" required maxlength="200">
+        <label for="descripcion">{{ _("Descripción (opcional)") }}</label>
+        <textarea id="descripcion" name="descripcion" rows="2"></textarea>
       </p>
-      <p>
-        <label for="nivel_educativo">{{ _("Nivel educativo (CINE / UNESCO)") }}</label>
-        <select id="nivel_educativo" name="nivel_educativo" required>
-          <option value="" disabled selected>{{ _("Elige el nivel") }}</option>
-          {% for n in niveles_cine %}
-          <option value="{{ n.codigo }}">{{ _(n.etiqueta) }}</option>
-          {% endfor %}
-        </select>
-      </p>
-    </div>
-    <p>
-      <label for="descripcion">{{ _("Descripción (opcional)") }}</label>
-      <textarea id="descripcion" name="descripcion" rows="3"></textarea>
-    </p>
-    <p><button class="btn p" type="submit">{{ icono('plus') }}{{ _("Crear") }}</button></p>
+      <p class="acciones"><button class="btn p" type="submit">{{ icono('plus') }}{{ _("Crear") }}</button></p>
+    </form>
+  </details>
+  {% if cursos or q %}
+  <form class="buscador" method="get" action="{{ url_for('panel.cursos') }}" role="search">
+    <label for="buscar-cursos" class="sr-only">{{ _("Buscar cursos") }}</label>
+    <input id="buscar-cursos" name="q" type="search" value="{{ q }}" placeholder="{{ _('Buscar curso por nombre, descripción o nivel') }}" data-filtro="#lista-cursos" data-filtro-estado="#estado-cursos" autocomplete="off">
+    <noscript><button class="btn" type="submit">{{ icono('search') }}{{ _("Buscar") }}</button></noscript>
+    <span id="estado-cursos" role="status" aria-live="polite"></span>
   </form>
-</section>
-{% if cursos or q %}
-<form class="buscador" method="get" action="{{ url_for('panel.cursos') }}" role="search">
-  <label for="buscar-cursos" class="sr-only">{{ _("Buscar cursos") }}</label>
-  <input id="buscar-cursos" name="q" type="search" value="{{ q }}" placeholder="{{ _('Buscar curso por nombre, descripción o nivel') }}" data-filtro="#lista-cursos" data-filtro-estado="#estado-cursos" autocomplete="off">
-  <noscript><button class="btn" type="submit">{{ icono('search') }}{{ _("Buscar") }}</button></noscript>
-  <span id="estado-cursos" role="status" aria-live="polite"></span>
-</form>
-{% endif %}
+  {% endif %}
+</div>
 {% if cursos %}
-<div class="tarjetas" id="lista-cursos">
+<div class="cursos" id="lista-cursos">
   {% for c in cursos %}
     {% set nivel = _(c.nivel_educativo_etiqueta) if c.nivel_educativo_etiqueta else '' %}
-    <a class="tarj glass" href="{{ url_for('panel.curso', curso_id=c.id) }}" data-buscar="{{ c.nombre_curso }} {{ c.descripcion or '' }} {{ nivel }}">
-      <div class="ph c{{ loop.index0 % 6 }}">{{ icono('book') }}<b aria-hidden="true">{{ (c.nombre_curso or '?')[:1] | upper }}</b></div>
-      <h3>{{ c.nombre_curso }}</h3>
-      <p>{{ c.descripcion or _("Sin descripción") }}</p>
-      <div class="chips">
-        {% if nivel %}<span class="chip">{{ icono('cap') }}{{ nivel }}</span>{% endif %}
-        <span class="chip">{{ icono('layers') }}{{ _("{n} sesiones", n=c.n_sesiones or 0) }}</span>
-        <span class="chip">{{ icono('users') }}{{ _("{n} estudiantes", n=c.n_estudiantes or 0) }}</span>
+    {% set n_ses = c.n_sesiones or 0 %}
+    {% set n_est = c.n_estudiantes or 0 %}
+    <a class="curso glass" href="{{ url_for('panel.curso', curso_id=c.id) }}" data-buscar="{{ c.nombre_curso }} {{ c.descripcion or '' }} {{ nivel }}">
+      <span class="curso-letra c{{ loop.index0 % 6 }}" aria-hidden="true">{{ (c.nombre_curso or '?')[:1] | upper }}</span>
+      <div class="curso-info">
+        <h3>{{ c.nombre_curso }}</h3>
+        {% if nivel %}<p title="{{ nivel }}">{{ nivel }}</p>{% endif %}
+        {% if c.descripcion %}<p title="{{ c.descripcion }}">{{ c.descripcion }}</p>{% endif %}
+        <p class="curso-datos">{{ _("1 sesión") if n_ses == 1 else _("{n} sesiones", n=n_ses) }} · {{ _("1 estudiante") if n_est == 1 else _("{n} estudiantes", n=n_est) }}</p>
       </div>
     </a>
   {% endfor %}
@@ -57,12 +64,6 @@
 <div class="empty glass caja">
   <b>{{ _("Sin resultados") }}</b>
   {{ _("Ningún curso coincide con «{q}».", q=q) }} <a href="{{ url_for('panel.cursos') }}">{{ _("Ver todos") }}</a>
-</div>
-{% else %}
-<div class="empty glass caja">
-  <div class="o">{{ icono('cap') }}</div>
-  <b>{{ _("Aún no hay cursos") }}</b>
-  {{ _("Crea el primero con el formulario de arriba.") }}
 </div>
 {% endif %}
 {% endblock %}

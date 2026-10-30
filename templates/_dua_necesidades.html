@@ -1,6 +1,7 @@
 <fieldset class="dua-checks">
   <legend>{{ leyenda or _("Necesidades DUA y adaptaciones de aprendizaje") }}</legend>
   <p class="mut">{{ _("Puedes marcar una o varias. Se combinan entre sí.") }}</p>
+  <div class="dua-opciones">
   {% for n in necesidades_dua %}
   <p>
     <label class="chk">
@@ -12,21 +13,22 @@
     <span class="mut">{{ _(n.ayuda) }}</span>
   </p>
   {% endfor %}
-  <div>
+  </div>
+  <div class="dua-idioma">
     <label for="{{ id_idioma }}">{{ _("Lengua materna / idioma de la clase") }}</label>
-    <input id="{{ id_idioma }}" name="idioma" type="text" list="{{ id_idioma }}-sugerencias"
-      data-dua-idioma maxlength="80" autocomplete="off"
-      value="{{ idioma_actual or 'Español' }}"
-      placeholder="{{ _('Escribe o elige: quechua, aymara, guaraní, inglés…') }}">
+    <div class="dua-idioma-fila">
+      <input id="{{ id_idioma }}" name="idioma" type="text" list="{{ id_idioma }}-sugerencias"
+        data-dua-idioma maxlength="80" autocomplete="off"
+        value="{{ idioma_actual or 'Español' }}"
+        placeholder="{{ _('Escribe o elige: quechua, aymara, guaraní, inglés…') }}">
+      <button type="button" class="btn" data-dua-aplicar>{{ icono('globe') }}{{ _("Aplicar idioma") }}</button>
+    </div>
     <datalist id="{{ id_idioma }}-sugerencias">
       {% for l in lenguas_dua %}
       <option value="{{ _(l.etiqueta) }}"></option>
       {% endfor %}
     </datalist>
     <span class="mut">{{ _("Escribe el idioma (por ejemplo quechua) y pulsa Aplicar. Hasta entonces el texto extraído no cambia.") }}</span>
-    <p class="acciones">
-      <button type="button" class="btn p" data-dua-aplicar>{{ icono('globe') }}{{ _("Aplicar idioma") }}</button>
-    </p>
     <p id="{{ id_idioma }}-estado" class="aviso" data-dua-idioma-estado hidden role="status"></p>
   </div>
 </fieldset>

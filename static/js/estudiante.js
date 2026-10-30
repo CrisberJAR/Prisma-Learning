@@ -28,7 +28,8 @@
   function textoUltimaRespuesta() {
     var ps = log.querySelectorAll(".msg");
     var ultimo = ps[ps.length - 1];
-    return ultimo ? ultimo.textContent : "";
+    if (!ultimo) return "";
+    return window.PrismaMates ? window.PrismaMates.textoVoz(ultimo) : ultimo.textContent;
   }
 
   function agregar(quien, texto) {
@@ -78,6 +79,7 @@
             }
             if (evento === "done") {
               estado.textContent = t("Respuesta lista. Es una IA y puede equivocarse.");
+              if (window.PrismaMates) window.PrismaMates.pintar(nodo);
               log.setAttribute("aria-busy", "false");
               return;
             }

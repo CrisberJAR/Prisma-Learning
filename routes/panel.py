@@ -59,7 +59,7 @@ def editar_curso(curso_id):
         flash(str(exc), "error")
     else:
         flash(_("Curso actualizado."), "ok")
-    return redirect(url_for("panel.curso", curso_id=curso_id))
+    return redirect(url_for("panel.curso", curso_id=curso_id, pestana="ajustes"))
 
 
 @bp.post("/cursos/<uuid:curso_id>/eliminar")
@@ -70,7 +70,7 @@ def eliminar_curso(curso_id):
         svc.eliminar_curso(curso_id, g.usuario["id"], request.form.get("confirmacion", ""))
     except ValueError as exc:
         flash(str(exc), "error")
-        return redirect(url_for("panel.curso", curso_id=curso_id))
+        return redirect(url_for("panel.curso", curso_id=curso_id, pestana="ajustes"))
     flash(_("Curso eliminado con sus sesiones e inscripciones. Las cuentas de los estudiantes se conservan."), "ok")
     return redirect(url_for("panel.cursos"))
 
@@ -229,10 +229,10 @@ def inscribir(curso_id):
         )
     except ValueError as exc:
         flash(str(exc), "error")
-        return redirect(url_for("panel.curso", curso_id=curso_id))
+        return redirect(url_for("panel.curso", curso_id=curso_id, pestana="estudiantes"))
     except Exception as exc:
         flash(_("No se pudo inscribir al estudiante. Detalle: {detalle}", detalle=exc), "error")
-        return redirect(url_for("panel.curso", curso_id=curso_id))
+        return redirect(url_for("panel.curso", curso_id=curso_id, pestana="estudiantes"))
     if fila.get("clave_temporal"):
         # Se renderiza en vez de redirigir: la clave no viaja en la cookie de flash.
         flash(_("Cuenta creada e inscrita. Entrega estos datos al estudiante."), "ok")
@@ -241,7 +241,7 @@ def inscribir(curso_id):
         flash(_("Ese estudiante ya estaba inscrito en este curso."), "ok")
     else:
         flash(_("Estudiante inscrito. Ya tenía cuenta: entra con su contraseña de siempre."), "ok")
-    return redirect(url_for("panel.curso", curso_id=curso_id))
+    return redirect(url_for("panel.curso", curso_id=curso_id, pestana="estudiantes"))
 
 
 @bp.post("/cursos/<uuid:curso_id>/inscripciones/<uuid:inscripcion_id>/clave")
@@ -257,7 +257,7 @@ def restablecer_clave(curso_id, inscripcion_id):
         clave = cuentas.restablecer_clave(insc["estudiante_id"])
     except Exception as exc:
         flash(_("No se pudo restablecer la contraseña: {detalle}", detalle=exc), "error")
-        return redirect(url_for("panel.curso", curso_id=curso_id))
+        return redirect(url_for("panel.curso", curso_id=curso_id, pestana="estudiantes"))
     perfil = svc.perfil_basico(insc["estudiante_id"])
     flash(_("Contraseña restablecida. El estudiante deberá cambiarla al entrar."), "ok")
     return _pagina_curso(curso_id, credencial={"email": perfil.get("email") or "", "clave": clave})
@@ -271,7 +271,7 @@ def desinscribir(curso_id, inscripcion_id):
         return (_("Curso no encontrado."), 404)
     svc.desinscribir(str(inscripcion_id), curso_id)
     flash(_("Estudiante quitado del curso. Su cuenta sigue activa."), "ok")
-    return redirect(url_for("panel.curso", curso_id=curso_id))
+    return redirect(url_for("panel.curso", curso_id=curso_id, pestana="estudiantes"))
 
 
 @bp.post("/cursos/<uuid:curso_id>/inscripciones/<uuid:inscripcion_id>")
@@ -283,7 +283,7 @@ def preferencias(curso_id, inscripcion_id):
     prefs = request.form.getlist("preferencias")
     svc.actualizar_preferencias(str(inscripcion_id), curso_id, prefs, request.form.get("idioma", "es"))
     flash(_("Necesidades DUA actualizadas. El estudiante las verá combinadas en la clase."), "ok")
-    return redirect(url_for("panel.curso", curso_id=curso_id))
+    return redirect(url_for("panel.curso", curso_id=curso_id, pestana="estudiantes"))
 
 
 @bp.get("/sesiones/<uuid:sesion_id>")

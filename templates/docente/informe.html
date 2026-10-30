@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Informe") }} · {{ estudiante.nombre or '' }} · Prisma{% endblock %}
 {% block contenido %}
-<p><a class="btn" href="{{ url_for('panel.sesion', sesion_id=sesion.id, pestana='resultados') }}#resultados">{{ icono('arrow-left') }}{{ _("Volver a los resultados") }}</a></p>
+<p class="volver"><a href="{{ url_for('panel.sesion', sesion_id=sesion.id, pestana='resultados') }}#resultados">{{ icono('arrow-left') }}{{ _("Volver a los resultados") }}</a></p>
 <section class="glass caja">
   <div class="titulo"><span class="ico-tile">{{ icono('award') }}</span><h1>{{ _("Informe de aprendizaje") }}</h1></div>
   <p class="mut">{{ estudiante.nombre or '' }}{% if estudiante.email %} · {{ estudiante.email }}{% endif %} · {{ sesion.titulo }}</p>
@@ -51,7 +51,7 @@
   <ol class="lista">
     {% for it, r in filas %}
     <li>
-      <p><b>{{ it.enunciado }}</b> <small class="mut">({{ _(tipos_ejercicio[it.tipo]) }})</small></p>
+      <p><b data-mates>{{ it.enunciado }}</b> <small class="mut">({{ _(tipos_ejercicio[it.tipo]) }})</small></p>
       <p>{{ _("Respuesta del estudiante") }}:
         {% if r.respuesta is none or r.respuesta == '' %}<i>{{ _("sin responder") }}</i>
         {% elif it.tipo == 'opcion_multiple' %}{{ it.opciones[r.respuesta] }}
@@ -69,10 +69,10 @@
         {% elif r.puntaje > 0 %}<span class="chip w">{{ _("Parcial ({p}%)", p=(r.puntaje * 100) | round | int) }}</span>
         {% else %}<span class="chip nivel-inicial">{{ icono('x') }}{{ _("Incorrecta") }}</span>{% endif %}
       </p>
-      {% if r.comentario %}<p class="mut">{{ _("Comentario mostrado al estudiante") }}: {{ r.comentario }}</p>{% endif %}
+      {% if r.comentario %}<p class="mut">{{ _("Comentario mostrado al estudiante") }}: <span data-mates>{{ r.comentario }}</span></p>{% endif %}
     </li>
     {% endfor %}
   </ol>
 </section>
 {% endblock %}
-{% block scripts %}<script src="{{ url_for('static', filename='js/filtro.js') }}" defer></script>{% endblock %}
+{% block scripts %}{% include "_mates.html" %}<script src="{{ url_for('static', filename='js/filtro.js') }}" defer></script>{% endblock %}

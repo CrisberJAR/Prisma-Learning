@@ -214,6 +214,39 @@ def test_pagina_curso_muestra_gestion_y_buscadores(monkeypatch):
         assert texto in html, texto
 
 
+def test_lista_de_cursos_compacta_y_con_singular(monkeypatch):
+    _docente(monkeypatch)
+    monkeypatch.setattr(svc, "listar_cursos", lambda did: [{"id": CID, "nombre_curso": "Biología", "n_sesiones": 1, "n_estudiantes": 2}])
+    html = create_app().test_client().get("/docente/cursos").get_data(as_text=True)
+    assert "1 sesión · 2 estudiantes" in html and "1 sesiones" not in html
+    assert '<details class="gestion accion" >' in html  # con cursos, el formulario de crear empieza plegado
+
+
+def test_acciones_de_estudiantes_vuelven_a_su_pestana(monkeypatch):
+    _docente(monkeypatch)
+    monkeypatch.setattr(materiales, "docente_es_dueno", lambda cid, did: True)
+    monkeypatch.setattr(svc, "actualizar_preferencias", lambda *a: None)
+    resp = create_app().test_client().post(f"/docente/cursos/{CID}/inscripciones/{SID}", data={"idioma": "es"})
+    assert "pestana=estudiantes" in resp.headers["Location"]
+
+
+def test_pestanas_inactivas_llegan_ocultas_sin_parpadeo(monkeypatch):
+    _docente(monkeypatch)
+    monkeypatch.setattr(materiales, "docente_es_dueno", lambda cid, did: True)
+    monkeypatch.setattr(svc, "obtener_curso", lambda cid, did: _base_curso())
+    monkeypatch.setattr(svc, "sesiones_de_curso", lambda cid: [])
+    monkeypatch.setattr(svc, "inscripciones", lambda cid: [])
+    c = create_app().test_client()
+    html = c.get(f"/docente/cursos/{CID}").get_data(as_text=True)
+    assert '<section id="panel-sesiones"  role="tabpanel"' in html
+    assert '<section id="panel-estudiantes" hidden role="tabpanel"' in html
+    assert 'id="panel-ajustes" hidden role="tabpanel"' in html
+    assert "<noscript>" in html  # sin JavaScript se ven todas
+    html = c.get(f"/docente/cursos/{CID}?pestana=estudiantes").get_data(as_text=True)
+    assert '<section id="panel-estudiantes"  role="tabpanel"' in html
+    assert '<section id="panel-sesiones" hidden role="tabpanel"' in html
+
+
 def test_csrf_bloquea_post_de_otro_sitio(monkeypatch):
     _docente(monkeypatch)
     monkeypatch.setattr(svc, "eliminar_curso", lambda *a: (_ for _ in ()).throw(AssertionError("no")))

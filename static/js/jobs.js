@@ -31,7 +31,12 @@
           mostrar(tab);
         });
       });
-      mostrar(lista.querySelector('[aria-selected="true"]') || tabs[0]);
+      // Un enlace a #ancla abre la pestaña que la contiene.
+      var ancla = null;
+      try { ancla = location.hash && document.querySelector(location.hash); } catch (e) {}
+      var panel = ancla && ancla.closest('[role="tabpanel"]');
+      var porAncla = panel && lista.querySelector('[aria-controls="' + panel.id + '"]');
+      mostrar(porAncla || lista.querySelector('[aria-selected="true"]') || tabs[0]);
     });
   }
 
@@ -53,7 +58,7 @@
         var fill = barra.querySelector("i");
         if (fill) fill.style.width = (job.progreso || 0) + "%";
         barra.setAttribute("data-job-estado", job.estado);
-        var extra = job.formato ? " / " + job.formato : "";
+        var extra = job.formato ? " / " + String(job.formato).split(":")[0] : "";
         var texto = etiqueta(job.tipo) + extra + " · " + etiqueta(job.estado) + " · " + (job.progreso || 0) + "%";
         if (job.estado === "done") texto += " " + t("(listo: recarga para ver el resultado)");
         var label = document.querySelector('[data-job-label="' + id + '"]');

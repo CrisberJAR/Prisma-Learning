@@ -1,4 +1,4 @@
-<section class="glass caja" id="panel-ejercicios" role="tabpanel" aria-labelledby="tab-ejercicios">
+<section class="glass caja" id="panel-ejercicios" {% if pestana != 'ejercicios' %}hidden{% endif %} role="tabpanel" aria-labelledby="tab-ejercicios">
   <div class="row">
     <div>
       <div class="titulo"><span class="ico-tile">{{ icono('clipboard') }}</span><h2 id="ejercicios">{{ _("Ejercicios de la sesión") }}</h2></div>

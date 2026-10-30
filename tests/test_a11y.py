@@ -66,3 +66,9 @@ def _como_docente(monkeypatch):
         return g.usuario
 
     monkeypatch.setattr("services.auth.usuario_actual", fake)
+
+
+def test_formulas_con_katex_servido_por_la_app():
+    c = create_app().test_client()
+    for ruta in ("vendor/katex/katex.min.js", "vendor/katex/katex.min.css", "vendor/katex/fonts/KaTeX_Main-Regular.woff2", "js/mates.js"):
+        assert c.get("/static/" + ruta).status_code == 200, ruta

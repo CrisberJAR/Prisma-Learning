@@ -7,6 +7,8 @@
   {% include "_fuentes.html" %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <meta name="theme-color" content="#0b1437">
+  <script>document.documentElement.classList.add("js")</script>
+  <noscript><style>[role=tabpanel][hidden]{display:flex!important}</style></noscript>
   {% include "_i18n_js.html" %}
 </head>
 <body>
@@ -28,6 +30,7 @@
   <footer class="pie">
     <p><a href="{{ url_for('privacidad') }}">{{ _("Privacidad") }}</a> · {{ _("Ayuda: usa «Saltar al contenido» o el menú de la página.") }}</p>
   </footer>
+  <script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/jobs.js') }}" defer></script>
   {% block scripts %}{% endblock %}
 </body>

@@ -36,10 +36,13 @@
       lista = null;
     }
     function enLinea(s) {
-      return esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+      return esc(s)
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/(^|[\s(])\*(?=\S)([^*]*\S)\*/g, "$1<em>$2</em>");
     }
     String(texto || "").split(/\r?\n/).forEach(function (linea) {
-      var l = linea.trim();
+      // Un * suelto al inicio (sin pareja) es un descuido de la IA, no una viñeta ni cursiva.
+      var l = linea.trim().replace(/^\*(?=\S)([^*]*)$/, "$1");
       var m;
       if (!l) { cerrarParrafo(); cerrarLista(); return; }
       if ((m = l.match(/^#{1,6}\s+(.*)$/))) {
@@ -48,7 +51,13 @@
       } else if ((m = l.match(/^[-*•]\s+(.*)$/)) || (m = l.match(/^\d+[.)]\s+(.*)$/))) {
         cerrarParrafo();
         var tipo = /^\d/.test(l) ? "ol" : "ul";
-        if (lista !== tipo) { cerrarLista(); html.push("<" + tipo + ">"); lista = tipo; }
+        if (lista !== tipo) {
+          cerrarLista();
+          // La numeración sigue la del texto aunque haya párrafos entre un punto y el siguiente.
+          var inicio = tipo === "ol" ? parseInt(l, 10) : 1;
+          html.push(inicio > 1 ? '<ol start="' + inicio + '">' : "<" + tipo + ">");
+          lista = tipo;
+        }
         html.push("<li>" + enLinea(m[1]) + "</li>");
       } else {
         cerrarLista();
@@ -62,6 +71,7 @@
 
   function bionicHtml(texto) {
     return esc(texto).replace(/\S+/g, function (w) {
+      if (w.indexOf("\uE000") >= 0) return w; // una fórmula no se parte
       var n = Math.max(1, Math.ceil(w.length * 0.4));
       return "<strong>" + w.slice(0, n) + "</strong>" + w.slice(n);
     });
@@ -71,8 +81,12 @@
     return "<ol class='pildoras'>" + bloques(texto).map(function (p) {
       var lineas = p.split("\n");
       var tit = lineas[0].replace(/^#+\s*/, "");
-      var cuerpo = lineas.slice(1).join(" ").trim() || tit;
-      return "<li><h3>" + esc(tit) + "</h3><p>" + bionicHtml(cuerpo) + "</p></li>";
+      // Cada línea queda aparte: juntar los puntos de una lista en un párrafo es justo lo que el modo TDAH evita.
+      var cuerpo = lineas.slice(1).map(function (l) {
+        return l.replace(/\*\*/g, "").replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "• ").trim();
+      }).filter(Boolean);
+      if (!cuerpo.length) cuerpo = [tit];
+      return "<li><h3>" + esc(tit) + "</h3>" + cuerpo.map(function (l) { return "<p>" + bionicHtml(l) + "</p>"; }).join("") + "</li>";
     }).join("") + "</ol>";
   }
 
@@ -154,6 +168,9 @@
       return;
     }
     meta = meta || {};
+    var M = global.PrismaMates;
+    var ext = M ? M.extraer(texto) : { texto: texto, formulas: [] };
+    var limpio = ext.texto;
     var html = "";
     if (meta.error) {
       html += '<p class="aviso err" role="alert">' + esc(meta.error) + "</p>";
@@ -166,10 +183,10 @@
       else if (needs.indexOf("ceguera") >= 0 && meta.tts !== false) html += reproductor();
       else if (needs.indexOf("ceguera") >= 0 && meta.tts === false) html += avisoAudio(meta.nombre || t("este idioma"));
     }
-    if (needs.indexOf("apoyo_visual") >= 0) html += mapa(texto);
-    if (needs.indexOf("tdah") >= 0) html += pills(texto);
-    else html += "<div class='texto md'>" + md(texto) + "</div>";
-    preview.innerHTML = html;
+    if (needs.indexOf("apoyo_visual") >= 0) html += mapa(limpio);
+    if (needs.indexOf("tdah") >= 0) html += pills(limpio);
+    else html += "<div class='texto md'>" + md(limpio) + "</div>";
+    preview.innerHTML = M ? M.restaurar(html, ext.formulas) : html;
   }
 
   function parar() {
@@ -388,7 +405,8 @@
       }
       var nodoTexto = preview.querySelector(".texto") || preview.querySelector(".pildoras") || preview;
       setReproductorEstado(cajaAudio, "playing");
-      hablar(nodoTexto.textContent || textoMostrado, codigoVoz(), function () {
+      var aLeer = global.PrismaMates ? global.PrismaMates.textoVoz(nodoTexto) : nodoTexto.textContent;
+      hablar(aLeer || textoMostrado, codigoVoz(), function () {
         setReproductorEstado(cajaAudio, "idle");
       });
     });
@@ -404,8 +422,18 @@
     }
   }
 
+  // Texto de la clase con formato y fórmulas en un nodo cualquiera (pestaña Texto del docente).
+  function pintarMd(nodo) {
+    if (!nodo) return;
+    var M = global.PrismaMates;
+    var ext = M ? M.extraer(nodo.textContent) : { texto: nodo.textContent, formulas: [] };
+    var html = md(ext.texto);
+    nodo.innerHTML = M ? M.restaurar(html, ext.formulas) : html;
+  }
+
   global.PrismaDUA = {
     init: init,
+    pintarMd: pintarMd,
     hablar: hablar,
     parar: parar,
     pausar: pausar,

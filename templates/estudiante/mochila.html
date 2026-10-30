@@ -1,10 +1,12 @@
 {% extends "estudiante/base.html" %}
 {% block title %}{{ _("Mi mochila") }} · Prisma{% endblock %}
 {% block contenido %}
-<section class="glass caja">
-  <div class="titulo"><span class="ico-tile">{{ icono('backpack') }}</span><h1>{{ _("Mi mochila") }}</h1></div>
-  <p class="mut">{{ _("Materias en las que estás inscrito. Solo ves lo que el docente ya publicó.") }}</p>
-</section>
+<div class="pagina-cab">
+  <div>
+    <div class="titulo"><span class="ico-tile">{{ icono('backpack') }}</span><h1>{{ _("Mi mochila") }}</h1></div>
+    <p class="mut">{{ _("Materias en las que estás inscrito. Solo ves lo que el docente ya publicó.") }}</p>
+  </div>
+</div>
 {% if not cursos %}
 <div class="empty glass caja">
   <div class="o">{{ icono('backpack') }}</div>
@@ -14,17 +16,16 @@
 {% endif %}
 {% for c in cursos %}
   <article class="glass caja">
-    <div class="titulo"><span class="ico-tile">{{ icono('book') }}</span><div><h2>{{ c.nombre_curso }}</h2>
-    {% if c.nivel_educativo_etiqueta %}<p class="mut">{{ _(c.nivel_educativo_etiqueta) }}</p>{% endif %}</div></div>
+    <h2 class="curso-titulo">{{ c.nombre_curso }}</h2>
+    {% if c.nivel_educativo_etiqueta %}<p class="mut">{{ _(c.nivel_educativo_etiqueta) }}</p>{% endif %}
     {% if c.descripcion %}<p class="mut">{{ c.descripcion }}</p>{% endif %}
-    <h3>{{ _("Sesiones publicadas") }}</h3>
     {% if c.sesiones %}
-      <div class="tarjetas">
+      <div class="filas columnas">
         {% for s in c.sesiones %}
-          <a class="tarj glass" href="{{ url_for('estudiante.sesion', sesion_id=s.id) }}">
-            <div class="ph mini c{{ loop.index0 % 6 }}">{{ icono('book') }}</div>
-            <h3>{{ s.titulo }}</h3>
-            <span class="ir">{{ _("Entrar") }} {{ icono('arrow-right') }}</span>
+          <a class="fila" href="{{ url_for('estudiante.sesion', sesion_id=s.id) }}">
+            <span class="ico-tile chico">{{ icono('book') }}</span>
+            <span class="fila-texto"><b>{{ s.titulo }}</b></span>
+            {{ icono('arrow-right', 'fila-ir') }}
           </a>
         {% endfor %}
       </div>

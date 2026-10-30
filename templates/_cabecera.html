@@ -1,15 +1,18 @@
 {# Cabecera común. Variables: inicio (url de la marca), etiqueta_panel. #}
 <header class="top">
   <a class="marca" href="{{ inicio }}"><svg class="logo" aria-hidden="true"><use href="#i-logo"></use></svg>Prisma <small>{{ etiqueta_panel }}</small></a>
-  {% if g.usuario %}
-  <span class="sp who"><span class="avatar" aria-hidden="true">{{ (g.usuario.nombre or '?')[:1] | upper }}</span><span>{{ g.usuario.nombre }}</span></span>
-  {% else %}<span class="sp"></span>{% endif %}
+  <span class="sp"></span>
   {% include "_selector_idioma.html" %}
   {% if g.usuario %}
-  <a class="btn" href="{{ url_for('auth.cambiar_clave') }}" title="{{ _('Mi contraseña') }}">{{ icono('key') }}<span class="lbl">{{ _("Mi contraseña") }}</span></a>
-  <a class="btn" href="{{ url_for('privacidad') }}" title="{{ _('Privacidad') }}">{{ icono('shield') }}<span class="lbl">{{ _("Privacidad") }}</span></a>
-  <form action="{{ url_for('auth.salir') }}" method="post">
-    <button class="btn" type="submit" title="{{ _('Cerrar sesión') }}">{{ icono('log-out') }}<span class="lbl">{{ _("Cerrar sesión") }}</span></button>
-  </form>
+  <details class="menu-cuenta">
+    <summary aria-label="{{ _('Mi cuenta') }}"><span class="avatar" aria-hidden="true">{{ (g.usuario.nombre or '?')[:1] | upper }}</span><span class="menu-nombre">{{ g.usuario.nombre }}</span></summary>
+    <div class="menu-lista">
+      <a class="menu-item" href="{{ url_for('auth.cambiar_clave') }}">{{ icono('key') }}{{ _("Mi contraseña") }}</a>
+      <a class="menu-item" href="{{ url_for('privacidad') }}">{{ icono('shield') }}{{ _("Privacidad") }}</a>
+      <form action="{{ url_for('auth.salir') }}" method="post">
+        <button class="menu-item" type="submit">{{ icono('log-out') }}{{ _("Cerrar sesión") }}</button>
+      </form>
+    </div>
+  </details>
   {% endif %}
 </header>

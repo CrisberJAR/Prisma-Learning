@@ -1,4 +1,4 @@
-<section class="glass caja" id="panel-resultados" role="tabpanel" aria-labelledby="tab-resultados">
+<section class="glass caja" id="panel-resultados" {% if pestana != 'resultados' %}hidden{% endif %} role="tabpanel" aria-labelledby="tab-resultados">
   <div class="titulo"><span class="ico-tile">{{ icono('chart') }}</span><h2 id="resultados">{{ _("Resultados de los estudiantes") }}</h2></div>
   {% if not resultados.total %}
     <div class="empty">
