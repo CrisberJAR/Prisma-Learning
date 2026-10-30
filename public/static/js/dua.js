@@ -103,9 +103,17 @@
     });
   }
 
+  var vocesEnCache = [];
   function vocesListas() {
     if (!global.speechSynthesis) return [];
-    return global.speechSynthesis.getVoices() || [];
+    if (vocesEnCache.length) return vocesEnCache;
+    vocesEnCache = global.speechSynthesis.getVoices() || [];
+    return vocesEnCache;
+  }
+  if (global.speechSynthesis) {
+    global.speechSynthesis.onvoiceschanged = function () {
+      vocesEnCache = [];
+    };
   }
 
   function ttsSoporta(codigo) {
@@ -217,14 +225,21 @@
     parar();
     var u = new SpeechSynthesisUtterance(texto);
     u.lang = lang || "es-PE";
+    u.rate = 0.9;
+    u.pitch = 1.0;
     var voces = vocesListas();
     var pref = String(lang || "").toLowerCase();
     var base = pref.split("-")[0];
-    var voz = voces.filter(function (v) {
+    var coincidentes = voces.filter(function (v) {
       var l = String(v.lang || "").toLowerCase();
       return l === pref || l.indexOf(base) === 0;
-    })[0];
-    if (voz) u.voice = voz;
+    });
+    if (coincidentes.length) {
+      var voz = coincidentes.find(function (v) { return v.name && v.name.toLowerCase().indexOf("female") >= 0; }) ||
+                coincidentes.find(function (v) { return !v.name || v.name.toLowerCase().indexOf("male") < 0; }) ||
+                coincidentes[0];
+      if (voz) u.voice = voz;
+    }
     u.onend = function () {
       if (alTerminar) alTerminar();
     };
