@@ -1,0 +1,11 @@
+<script>
+  window.PRISMA_IDIOMA = {{ idioma_ui | tojson }};
+  window.PRISMA_I18N = {{ catalogo_js | tojson }};
+  window.t = function (texto, valores) {
+    var s = (window.PRISMA_I18N && window.PRISMA_I18N[texto]) || texto;
+    if (valores) {
+      s = s.replace(/\{(\w+)\}/g, function (m, k) { return k in valores ? valores[k] : m; });
+    }
+    return s;
+  };
+</script>

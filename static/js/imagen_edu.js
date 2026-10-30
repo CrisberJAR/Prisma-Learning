@@ -1,4 +1,8 @@
 (function () {
+  // Traducción de la interfaz (templates/_i18n_js.html); sin catálogo devuelve el español.
+  var t = window.t || function (s, v) {
+    return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in v ? v[k] : m; }) : s;
+  };
   var caja = document.getElementById("imagen-educativa");
   if (!caja) return;
   var img = document.getElementById("img-edu");
@@ -10,7 +14,7 @@
   }
 
   function mostrar(url, alt) {
-    img.alt = alt || "Imagen educativa del tema";
+    img.alt = alt || t("Imagen educativa del tema");
     img.onload = function () {
       img.hidden = false;
       if (estado) estado.hidden = true;
@@ -18,7 +22,7 @@
     img.onerror = function () {
       if (estado) {
         estado.hidden = false;
-        estado.textContent = "No se pudo cargar la ilustración. Recarga la página para reintentar.";
+        estado.textContent = t("No se pudo cargar la ilustración. Recarga la página para reintentar.");
       }
     };
     img.src = url;
@@ -35,16 +39,16 @@
       }
       if (estado) {
         if (j && j.estado === "sin_texto") {
-          estado.textContent = "Cuando haya texto de la clase se generará la ilustración.";
+          estado.textContent = t("Cuando haya texto de la clase se generará la ilustración.");
         } else if (j && (j.error || j.estado === "error")) {
-          estado.textContent = j.error || "No se pudo generar la ilustración. Revisa el servidor e inténtalo de nuevo.";
+          estado.textContent = j.error || t("No se pudo generar la ilustración. Revisa el servidor e inténtalo de nuevo.");
         } else {
-          estado.textContent = "Aún no hay ilustración para este tema.";
+          estado.textContent = t("Aún no hay ilustración para este tema.");
         }
       }
     })
     .catch(function () {
-      if (estado) estado.textContent = "No se pudo generar la ilustración ahora. Recarga la página.";
+      if (estado) estado.textContent = t("No se pudo generar la ilustración ahora. Recarga la página.");
     });
 
   var form = document.getElementById("form-dua-sim") || document.getElementById("form-dua-est");

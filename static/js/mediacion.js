@@ -1,4 +1,8 @@
 (function () {
+  // Traducción de la interfaz (templates/_i18n_js.html); sin catálogo devuelve el español.
+  var t = window.t || function (s, v) {
+    return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in v ? v[k] : m; }) : s;
+  };
   var caja = document.getElementById("mediacion-tema");
   if (!caja) return;
   var endpoint = caja.getAttribute("data-med-url");
@@ -27,8 +31,8 @@
       pautaEstado.hidden = false;
       pautaEstado.textContent =
         j && j.estado === "sin_texto"
-          ? "Cuando haya texto de la clase se generará la pauta."
-          : "Aún no hay pauta para este tema.";
+          ? t("Cuando haya texto de la clase se generará la pauta.")
+          : t("Aún no hay pauta para este tema.");
     }
     var items = Array.isArray(j.glosario) ? j.glosario : [];
     if (items.length && glosLista) {
@@ -47,7 +51,7 @@
       if (glosEstado) glosEstado.hidden = true;
     } else if (glosEstado) {
       glosEstado.hidden = false;
-      glosEstado.textContent = items.length ? "" : "No hay términos extraídos para este tema.";
+      glosEstado.textContent = items.length ? "" : t("No hay términos extraídos para este tema.");
     }
   }
 
@@ -57,7 +61,7 @@
     })
     .then(pintar)
     .catch(function () {
-      if (pautaEstado) pautaEstado.textContent = "No se pudo cargar la pauta ahora.";
-      if (glosEstado) glosEstado.textContent = "No se pudo cargar el glosario ahora.";
+      if (pautaEstado) pautaEstado.textContent = t("No se pudo cargar la pauta ahora.");
+      if (glosEstado) glosEstado.textContent = t("No se pudo cargar el glosario ahora.");
     });
 })();

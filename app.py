@@ -5,6 +5,7 @@ from flask import Flask, jsonify, redirect, url_for
 import httpx
 
 from config import settings
+from services import i18n
 from routes.auth import bp as auth_bp
 from routes.chat import bp as chat_bp
 from routes.docente import bp as docente_bp
@@ -33,6 +34,22 @@ def create_app(con_worker: bool | None = None):
         from services.auth import usuario_actual
 
         usuario_actual()
+
+    @app.before_request
+    def cargar_idioma():
+        from flask import g, request, session
+
+        g.idioma = i18n.resolver(session, getattr(g, "usuario", None), request.accept_languages)
+
+    @app.context_processor
+    def contexto_idioma():
+        from flask import g
+
+        codigo = getattr(g, "idioma", i18n.DEFECTO)
+        return {"idioma_ui": codigo, "idiomas_ui": i18n.IDIOMAS, "catalogo_js": i18n.catalogo_js(codigo)}
+
+    app.jinja_env.globals["_"] = i18n._
+    app.jinja_env.filters["etiqueta"] = i18n.etiqueta
 
     @app.before_request
     def proteger_csrf():

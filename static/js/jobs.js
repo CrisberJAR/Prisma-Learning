@@ -1,4 +1,19 @@
 (function () {
+  // Traducción de la interfaz (templates/_i18n_js.html); sin catálogo devuelve el español.
+  var t = window.t || function (s, v) {
+    return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in v ? v[k] : m; }) : s;
+  };
+  var ETIQUETAS = {
+    queued: t("En cola"),
+    running: t("En curso"),
+    done: t("Listo"),
+    failed: t("Falló"),
+    extraer: t("Extracción"),
+    formato: t("Formato"),
+  };
+  function etiqueta(v) {
+    return ETIQUETAS[v] || v || "";
+  }
   function iniciarTabs() {
     document.querySelectorAll('[role="tablist"]').forEach(function (lista) {
       var tabs = Array.prototype.slice.call(lista.querySelectorAll('[role="tab"]'));
@@ -37,9 +52,10 @@
         barra.setAttribute("aria-valuenow", String(job.progreso || 0));
         var fill = barra.querySelector("i");
         if (fill) fill.style.width = (job.progreso || 0) + "%";
+        barra.setAttribute("data-job-estado", job.estado);
         var extra = job.formato ? " / " + job.formato : "";
-        var texto = job.tipo + extra + " · " + job.estado + " · " + (job.progreso || 0) + "%";
-        if (job.estado === "done") texto += " (listo: recarga para ver el resultado)";
+        var texto = etiqueta(job.tipo) + extra + " · " + etiqueta(job.estado) + " · " + (job.progreso || 0) + "%";
+        if (job.estado === "done") texto += " " + t("(listo: recarga para ver el resultado)");
         var label = document.querySelector('[data-job-label="' + id + '"]');
         if (label) label.textContent = texto;
         if (job.estado === "queued" || job.estado === "running") {
@@ -50,11 +66,9 @@
   }
 
   barras.forEach(function (b) {
-    var estado = "";
-    var label = document.querySelector('[data-job-label="' + b.getAttribute("data-job-id") + '"]');
-    if (label) estado = label.textContent || "";
-    else estado = b.textContent || "";
-    if (estado.indexOf("queued") !== -1 || estado.indexOf("running") !== -1) {
+    // El estado viaja como atributo: el texto visible ya está traducido.
+    var estado = b.getAttribute("data-job-estado") || "";
+    if (estado === "queued" || estado === "running") {
       actualizar(b);
     }
   });

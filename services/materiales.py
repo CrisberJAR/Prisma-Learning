@@ -7,6 +7,7 @@ from pathlib import Path
 
 from services import jobs, storage
 from services.supabase_client import get_service_client
+from services.i18n import _
 
 _PREVIA_DIR = Path(tempfile.gettempdir()) / "prisma-previas"
 
@@ -71,7 +72,7 @@ def clasificar_archivo(nombre: str) -> tuple[str, str, str]:
     ext = os.path.splitext(nombre or "")[1].lower()
     if ext not in TIPOS_PERMITIDOS:
         permitidas = ", ".join(sorted(TIPOS_PERMITIDOS))
-        raise MaterialInvalido(f"Tipo de archivo no permitido. Usa: {permitidas}")
+        raise MaterialInvalido(_("Tipo de archivo no permitido. Usa: {permitidas}", permitidas=permitidas))
     tipo, content_type = TIPOS_PERMITIDOS[ext]
     return ext, tipo, content_type
 
@@ -103,7 +104,7 @@ def docente_es_dueno(curso_id: str, docente_id: str) -> bool:
 def registrar_material(curso_id: str, titulo: str, nombre_archivo: str, datos: bytes, idioma: str = "es") -> dict:
     """Sube el archivo, crea la sesión en estado 'procesando' y encola el job 'extraer'."""
     if not datos:
-        raise MaterialInvalido("El archivo está vacío")
+        raise MaterialInvalido(_("El archivo está vacío"))
     ext, tipo, content_type = clasificar_archivo(nombre_archivo)
     hash_contenido = sha256_bytes(datos)
 
@@ -151,14 +152,14 @@ def _leer_previa(hash_contenido: str) -> tuple[bytes, dict]:
     binario = _PREVIA_DIR / f"{hash_contenido}.bin"
     meta = _PREVIA_DIR / f"{hash_contenido}.json"
     if not binario.is_file() or not meta.is_file():
-        raise MaterialInvalido("La vista previa expiró. Vuelve a extraer el archivo.")
+        raise MaterialInvalido(_("La vista previa expiró. Vuelve a extraer el archivo."))
     return binario.read_bytes(), json.loads(meta.read_text(encoding="utf-8"))
 
 
 def previsualizar_material(curso_id: str, titulo: str, nombre_archivo: str, datos: bytes, idioma: str = "es") -> dict:
     """Extrae el texto en local. La subida a Storage ocurre al aprobar la sesión."""
     if not datos:
-        raise MaterialInvalido("El archivo está vacío")
+        raise MaterialInvalido(_("El archivo está vacío"))
     ext, tipo, content_type = clasificar_archivo(nombre_archivo)
     hash_contenido = sha256_bytes(datos)
     ruta = f"{curso_id}/{hash_contenido}{ext}"
@@ -168,18 +169,18 @@ def previsualizar_material(curso_id: str, titulo: str, nombre_archivo: str, dato
 
     try:
         if tipo in ("audio", "video"):
-            raise MaterialInvalido("El audio y el video se procesan al crear la sesión, no en la vista previa.")
+            raise MaterialInvalido(_("El audio y el video se procesan al crear la sesión, no en la vista previa."))
         texto_crudo = extractor.extraer(datos, tipo, idioma=idioma or "es").texto
     except extractor.ExtraccionNoSoportada as exc:
         raise MaterialInvalido(str(exc)) from exc
     except MaterialInvalido:
         raise
     except Exception as exc:
-        raise MaterialInvalido(f"No se pudo extraer el archivo: {exc}") from exc
+        raise MaterialInvalido(_("No se pudo extraer el archivo: {detalle}", detalle=exc)) from exc
 
     texto_crudo = (texto_crudo or "").strip()
     if not texto_crudo:
-        raise MaterialInvalido("No se encontró contenido útil sobre el tema. Prueba con otro archivo.")
+        raise MaterialInvalido(_("No se encontró contenido útil sobre el tema. Prueba con otro archivo."))
     fallback_titulo = (titulo or "").strip() or os.path.splitext(nombre)[0].replace("-", " ").replace("_", " ").strip() or "Sesión"
     nivel_etiqueta = _nivel_etiqueta(curso_id)
     preparado = extractor.preparar_clase(
@@ -188,7 +189,7 @@ def previsualizar_material(curso_id: str, titulo: str, nombre_archivo: str, dato
     propuesto = (titulo or "").strip() or preparado["titulo"]
     texto = (preparado.get("texto") or "").strip()
     if not texto:
-        raise MaterialInvalido("No se pudo armar un resumen del tema. Prueba de nuevo o pega el texto a mano.")
+        raise MaterialInvalido(_("No se pudo armar un resumen del tema. Prueba de nuevo o pega el texto a mano."))
     _guardar_previa(
         hash_contenido,
         datos,
@@ -209,7 +210,7 @@ def previsualizar_desde_titulo(curso_id: str, titulo: str, idioma: str = "es") -
     """Genera la clase a partir del título, sin archivo."""
     tema = (titulo or "").strip()
     if len(tema) < 3:
-        raise MaterialInvalido("Escribe un título de al menos 3 caracteres o sube un archivo.")
+        raise MaterialInvalido(_("Escribe un título de al menos 3 caracteres o sube un archivo."))
     from services import extractor
 
     hash_contenido = sha256_bytes(f"{curso_id}|tema|{tema}|{idioma or 'es'}".encode("utf-8"))
@@ -218,7 +219,7 @@ def previsualizar_desde_titulo(curso_id: str, titulo: str, idioma: str = "es") -
     propuesto = preparado.get("titulo") or tema
     texto = (preparado.get("texto") or "").strip()
     if not texto:
-        raise MaterialInvalido("No se pudo armar la clase a partir del título. Prueba de nuevo o pega el texto a mano.")
+        raise MaterialInvalido(_("No se pudo armar la clase a partir del título. Prueba de nuevo o pega el texto a mano."))
     _guardar_previa(
         hash_contenido,
         b"",
@@ -246,25 +247,25 @@ def confirmar_material(
 ) -> dict:
     """Crea la sesión en revisión con el texto que el docente ya vio y pudo editar."""
     if not ruta.startswith(f"{curso_id}/"):
-        raise MaterialInvalido("La vista previa no corresponde a este curso.")
+        raise MaterialInvalido(_("La vista previa no corresponde a este curso."))
     texto = (texto or "").strip()
     if not texto:
-        raise MaterialInvalido("El texto extraído está vacío. Edítalo o elige otro archivo.")
+        raise MaterialInvalido(_("El texto extraído está vacío. Edítalo o elige otro archivo."))
     tipos_ok = {t for t, _ in TIPOS_PERMITIDOS.values()} | {TIPO_TEMA}
     if tipo not in tipos_ok:
-        raise MaterialInvalido("Tipo de archivo no permitido.")
+        raise MaterialInvalido(_("Tipo de archivo no permitido."))
     datos, meta = _leer_previa(hash_contenido)
     if meta.get("curso_id") != curso_id:
-        raise MaterialInvalido("La vista previa no corresponde a este curso.")
+        raise MaterialInvalido(_("La vista previa no corresponde a este curso."))
     archivo_url = None
     if tipo != TIPO_TEMA:
         try:
             storage.upload_bytes(ruta, datos, meta.get("content_type") or "application/octet-stream")
         except Exception as exc:
-            raise MaterialInvalido(f"No se pudo guardar el archivo: {exc}") from exc
+            raise MaterialInvalido(_("No se pudo guardar el archivo: {detalle}", detalle=exc)) from exc
         archivo_url = ruta
     elif not (titulo or "").strip():
-        raise MaterialInvalido("El título de la sesión es obligatorio.")
+        raise MaterialInvalido(_("El título de la sesión es obligatorio."))
     db = get_service_client()
     sesion = (
         db.table("sesiones_material")

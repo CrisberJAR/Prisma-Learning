@@ -5,11 +5,16 @@ import logging
 import re
 import threading
 
-from services import ai_router, cache_ia, imagen_educativa
+from services import ai_router, cache_ia, i18n, imagen_educativa
 
 log = logging.getLogger(__name__)
 
 VERSION = "mediacion-v1"
+# v2 para otros idiomas: la v1 copiaba los ejemplos en español y la pauta salía en español.
+VERSION_OTROS_IDIOMAS = "mediacion-v2"
+# Respaldo sin IA; están en los catálogos de traducción (i18n.claves_dinamicas).
+PAUTA_LOCAL_DOCENTE = "Presente «{t}» con un ejemplo cercano al grupo, trace las ideas en un mapa o esquema y compruebe que pueden explicarlo con sus palabras antes de avanzar."
+PAUTA_LOCAL_ESTUDIANTE = "Lee «{t}» con calma, anota las palabras nuevas y trata de explicar el tema en voz alta o con un dibujo."
 MAX_TEXTO = 4000
 
 SISTEMA = (
@@ -43,25 +48,39 @@ def _limpiar_glosario(items) -> list[dict]:
     return out
 
 
-def _local(titulo: str) -> dict:
+def _local(titulo: str, idioma: str = "Español") -> dict:
+    """Pauta de respaldo sin IA. Usa los catálogos de la interfaz si el idioma es uno de ellos."""
+    from services import contenido
+
+    codigo = next((c for c, n in contenido.NOMBRES.items() if n == idioma), i18n.DEFECTO)
     t = (titulo or "este tema").strip()
     return {
         "estado": "lista",
-        "pauta_docente": (
-            f"Presente «{t}» con un ejemplo cercano al grupo, trace las ideas en un mapa "
-            "o esquema y compruebe que pueden explicarlo con sus palabras antes de avanzar."
+        "pauta_docente": i18n.traducir(
+            PAUTA_LOCAL_DOCENTE,
+            codigo,
+            t=t,
         ),
-        "pauta_estudiante": (
-            f"Lee «{t}» con calma, anota las palabras nuevas y trata de explicar el tema "
-            "en voz alta o con un dibujo."
+        "pauta_estudiante": i18n.traducir(
+            PAUTA_LOCAL_ESTUDIANTE,
+            codigo,
+            t=t,
         ),
         "glosario": [],
         "origen": "local",
     }
 
 
-def _desde_ia(texto: str, titulo: str, nivel: str) -> dict:
+def _desde_ia(texto: str, titulo: str, nivel: str, idioma: str = "Español") -> dict:
     recorte = (texto or "").strip()[:MAX_TEXTO]
+    from services import contenido
+
+    if contenido.mismo_idioma(idioma, "es"):
+        tono_docente, tono_estudiante = "use «Utilice» o «Invite»", "use «Puedes» o «Fíjate»"
+    else:
+        # Sin ejemplos en español: la IA los copiaba tal cual y la pauta salía en español.
+        tono_docente = f"en {idioma}, con verbos en imperativo formal"
+        tono_estudiante = f"en {idioma}, hablándole de tú al estudiante"
     res = ai_router.groq_texto(
         [
             {"role": "system", "content": SISTEMA},
@@ -72,12 +91,14 @@ def _desde_ia(texto: str, titulo: str, nivel: str) -> dict:
                     '{"pauta_docente":"...","pauta_estudiante":"...","glosario":[{"termino":"...","definicion":"..."}]}\n'
                     "pauta_docente: 1 o 2 frases para el docente. Cómo guiar la clase sobre este tema "
                     "(estrategia, recurso o actividad: mapa, debate, experimento, dramatización, etc.). "
-                    "Tono profesional, use «Utilice» o «Invite».\n"
+                    f"Tono profesional, {tono_docente}.\n"
                     "pauta_estudiante: 1 o 2 frases para el alumno. Cómo estudiar o entender este tema. "
-                    "Tono cercano, use «Puedes» o «Fíjate».\n"
+                    f"Tono cercano, {tono_estudiante}.\n"
                     "glosario: 4 a 8 términos clave del tema, con definiciones cortas al nivel del curso. "
                     "Sin copiar el texto entero.\n"
                     f"Nivel educativo: {nivel or 'no indicado'}.\n"
+                    f"IMPORTANTE: escribe pauta_docente, pauta_estudiante, los términos y las definiciones "
+                    f"SOLO en idioma «{idioma}», aunque el material y estas instrucciones estén en otro idioma.\n"
                     f"<DATOS>\nTitulo: {titulo}\n{recorte}\n</DATOS>"
                 ),
             },
@@ -107,8 +128,10 @@ def _clave(sesion: dict, nivel: str) -> str:
     return hashlib.sha256(f"{base}|{nivel}|mediacion".encode("utf-8")).hexdigest()
 
 
-def para_sesion(sesion: dict) -> dict:
-    """Devuelve pautas y glosario. Cachea por hash del material + nivel CINE."""
+def para_sesion(sesion: dict, idioma: str = "Español") -> dict:
+    """Devuelve pautas y glosario en `idioma`. Cachea por hash del material + nivel CINE + idioma."""
+    from services import contenido
+
     texto = (sesion.get("texto_extraido") or "").strip()
     titulo = (sesion.get("titulo") or "la sesión").strip()
     if not texto:
@@ -120,7 +143,9 @@ def para_sesion(sesion: dict) -> dict:
         }
     nivel = imagen_educativa.nivel_de_sesion(sesion)
     h = _clave(sesion, nivel)
-    hit = cache_ia.buscar(h, "mediacion", "es", VERSION)
+    idioma_cache = contenido.clave_cache(idioma)
+    version = VERSION if idioma_cache == "es" else VERSION_OTROS_IDIOMAS
+    hit = cache_ia.buscar(h, "mediacion", idioma_cache, version)
     if isinstance(hit, dict) and hit.get("pauta_docente") and hit.get("pauta_estudiante"):
         return {
             "estado": "lista",
@@ -130,12 +155,13 @@ def para_sesion(sesion: dict) -> dict:
             "origen": hit.get("origen") or "cache",
         }
     try:
-        out = _desde_ia(texto, titulo, nivel)
+        out = _desde_ia(texto, titulo, nivel, idioma)
     except Exception:
         log.warning("No se pudo generar la mediación con IA; se usa pauta local", exc_info=True)
-        out = _local(titulo)
+        # La pauta local no se cachea: así se vuelve a intentar con IA en la próxima visita.
+        return _local(titulo, idioma)
     try:
-        cache_ia.guardar(h, "mediacion", "es", VERSION, out)
+        cache_ia.guardar(h, "mediacion", idioma_cache, version, out)
     except Exception:
         pass
     return out

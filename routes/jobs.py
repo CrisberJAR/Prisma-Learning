@@ -2,6 +2,7 @@ from flask import Blueprint, g, jsonify
 
 from services import jobs
 from services.auth import requiere_rol
+from services.i18n import _
 
 bp = Blueprint("jobs", __name__)
 
@@ -12,7 +13,7 @@ def ver_job(job_id):
     """Polling del estado. El frontend pinta role=progressbar con progreso y texto."""
     job = jobs.docente_puede_ver_job(str(job_id), g.usuario["id"])
     if job is None:
-        return jsonify({"error": "Job no encontrado"}), 404
+        return jsonify({"error": _("Job no encontrado")}), 404
     return jsonify(
         {
             "id": job["id"],

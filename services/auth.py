@@ -56,6 +56,7 @@ def usuario_actual() -> dict | None:
         "rol": perfil[0]["rol"],
         "token": token,
         "debe_cambiar_clave": bool(perfil[0].get("debe_cambiar_clave")),
+        "idioma_ui": perfil[0].get("idioma_ui"),
     }
     return g.usuario
 

@@ -6,6 +6,7 @@ from flask import Blueprint, Response, g, jsonify, request, stream_with_context
 from services import chat_service, estudiante as est, rate_limit
 from services.auth import requiere_rol
 from services.ai_router import CuotaAgotada
+from services.i18n import _
 
 bp = Blueprint("chat", __name__)
 
@@ -15,7 +16,7 @@ bp = Blueprint("chat", __name__)
 def chat(sesion_id):
     visto = est.sesion_visible(str(sesion_id), g.usuario["id"])
     if visto is None:
-        return jsonify({"error": "Sesión no disponible"}), 404
+        return jsonify({"error": _("Sesión no disponible")}), 404
     try:
         rate_limit.comprobar(f"chat:{g.usuario['id']}", settings.RATE_CHAT_POR_MINUTO)
     except rate_limit.DemasiadoRapido as exc:
@@ -23,10 +24,15 @@ def chat(sesion_id):
     sesion, insc = visto
     cuerpo = request.get_json(silent=True) or {}
     pregunta = (cuerpo.get("pregunta") or request.form.get("pregunta") or "").strip()
-    from services import dua
+    from services import contenido, dua
 
     prefs = dua.normalizar_preferencias(insc.get("preferencias"))
-    idioma = dua.normalizar_idioma(insc.get("idioma_preferido") or "es")
+    idioma = contenido.idioma_para_estudiante(sesion["id"], insc)
+    original = sesion.get("idioma_original") or "es"
+    if not contenido.mismo_idioma(idioma, original):
+        # El tutor lee el material ya traducido (sale de la caché de la vista de la clase):
+        # así cita secciones y términos en el idioma que entiende la persona.
+        sesion = {**sesion, "texto_extraido": dua.traducir(sesion.get("texto_extraido") or "", idioma, original)}
 
     def eventos():
         try:
@@ -36,11 +42,11 @@ def chat(sesion_id):
         except chat_service.CuotaAgotadaChat as exc:
             yield f"event: error\ndata: {exc}\n\n"
         except CuotaAgotada as exc:
-            yield f"event: error\ndata: El tutor no está disponible ahora ({exc}).\n\n"
+            yield "event: error\ndata: " + _("El tutor no está disponible ahora ({detalle}).", detalle=exc) + "\n\n"
         except ValueError as exc:
             yield f"event: error\ndata: {exc}\n\n"
         except Exception:
-            yield "event: error\ndata: No se pudo completar la respuesta.\n\n"
+            yield "event: error\ndata: " + _("No se pudo completar la respuesta.") + "\n\n"
 
     return Response(stream_with_context(eventos()), mimetype="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
@@ -50,7 +56,7 @@ def chat(sesion_id):
 def duda(sesion_id):
     visto = est.sesion_visible(str(sesion_id), g.usuario["id"])
     if visto is None:
-        return jsonify({"error": "Sesión no disponible"}), 404
+        return jsonify({"error": _("Sesión no disponible")}), 404
     try:
         rate_limit.comprobar(f"chat:{g.usuario['id']}", settings.RATE_CHAT_POR_MINUTO)
     except rate_limit.DemasiadoRapido as exc:
@@ -61,4 +67,4 @@ def duda(sesion_id):
         chat_service.enviar_duda_docente(visto[0]["id"], g.usuario["id"], pregunta)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
-    return jsonify({"ok": True, "mensaje": "Tu duda quedó guardada para el docente."})
+    return jsonify({"ok": True, "mensaje": _("Tu duda quedó guardada para el docente.")})

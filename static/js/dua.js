@@ -1,4 +1,8 @@
 (function (global) {
+  // Traducción de la interfaz (templates/_i18n_js.html); sin catálogo devuelve el español.
+  var t = window.t || function (s, v) {
+    return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in v ? v[k] : m; }) : s;
+  };
   function esc(s) {
     return String(s || "")
       .replace(/&/g, "&amp;")
@@ -68,10 +72,13 @@
   }
 
   function avisoAudio(nombre) {
-    return (
-      '<p class="aviso" role="status">El contenido ha sido traducido con éxito a ' +
-      esc(nombre) +
-      ", pero la reproducción de voz en audio aún no está disponible para esta lengua.</p>"
+    return '<p class="aviso" role="status">' + esc(msgSinVoz(nombre)) + "</p>";
+  }
+
+  function msgSinVoz(nombre) {
+    return t(
+      "El contenido ha sido traducido con éxito a {nombre}, pero la reproducción de voz en audio aún no está disponible para esta lengua.",
+      { nombre: nombre }
     );
   }
 
@@ -93,11 +100,11 @@
   function reproductor() {
     return (
       '<div class="dua-audio">' +
-      '<button type="button" class="btn p" data-dua-hablar>Escuchar narración</button>' +
-      '<button type="button" class="btn" data-dua-pausar hidden>Pausar</button>' +
-      '<button type="button" class="btn p" data-dua-continuar hidden>Continuar</button>' +
-      '<button type="button" class="btn d" data-dua-parar hidden>Detener</button>' +
-      '<span class="mut">Pausa para seguir donde lo dejaste; detener reinicia la narración.</span></div>'
+      '<button type="button" class="btn p" data-dua-hablar>' + esc(t("Escuchar narración")) + "</button>" +
+      '<button type="button" class="btn" data-dua-pausar hidden>' + esc(t("Pausar")) + "</button>" +
+      '<button type="button" class="btn p" data-dua-continuar hidden>' + esc(t("Continuar")) + "</button>" +
+      '<button type="button" class="btn d" data-dua-parar hidden>' + esc(t("Detener")) + "</button>" +
+      '<span class="mut">' + esc(t("Pausa para seguir donde lo dejaste; detener reinicia la narración.")) + "</span></div>"
     );
   }
 
@@ -105,7 +112,7 @@
     parar();
     preview.setAttribute("data-dua", needs.join(" "));
     if (!texto) {
-      preview.innerHTML = "<p class='mut'>Aún no hay texto de la clase.</p>";
+      preview.innerHTML = "<p class='mut'>" + esc(t("Aún no hay texto de la clase.")) + "</p>";
       return;
     }
     meta = meta || {};
@@ -119,7 +126,7 @@
       if (meta.tts) html += reproductor();
       else if (traducido && meta.nombre) html += avisoAudio(meta.nombre);
       else if (needs.indexOf("ceguera") >= 0 && meta.tts !== false) html += reproductor();
-      else if (needs.indexOf("ceguera") >= 0 && meta.tts === false) html += avisoAudio(meta.nombre || "este idioma");
+      else if (needs.indexOf("ceguera") >= 0 && meta.tts === false) html += avisoAudio(meta.nombre || t("este idioma"));
     }
     if (needs.indexOf("apoyo_visual") >= 0) html += mapa(texto);
     if (needs.indexOf("tdah") >= 0) html += pills(texto);
@@ -217,31 +224,36 @@
       });
     }
 
+    // Texto "base": el original o, si la persona usa otro idioma (opts.traducirAlCargar), su traducción.
+    // Cambiar otros ajustes DUA vuelve a esta base, nunca al original en un idioma que no entiende.
+    var baseTexto = original;
+    var baseMeta = ultimoMeta;
+
     function pintarVista() {
       var needs = seleccion(root);
       clasesCuerpo(needs);
       if (needs.indexOf("lengua") < 0) {
-        textoMostrado = original;
-        ultimoMeta = { tts: ttsSoporta("es-PE"), codigo: "es-PE", traducido: false, nombre: "Español" };
+        textoMostrado = baseTexto;
+        ultimoMeta = baseMeta;
         estadoIdioma(root, "", "");
       }
       aplicar(preview, textoMostrado, needs, ultimoMeta);
     }
 
-    function aplicarIdioma() {
+    function aplicarIdioma(destForzado, esBase) {
       var needs = seleccion(root);
-      var dest = idioma();
+      var dest = destForzado || idioma();
       if (dest.length < 2) {
-        var errCorto = "El idioma ingresado no fue reconocido o no es válido. Por favor, verifica el nombre.";
+        var errCorto = t("El idioma ingresado no fue reconocido o no es válido. Por favor, verifica el nombre.");
         estadoIdioma(root, "error", errCorto);
         ultimoMeta = { error: errCorto, tts: false, traducido: false };
-        textoMostrado = original;
+        textoMostrado = baseTexto;
         aplicar(preview, textoMostrado, needs, ultimoMeta);
         return;
       }
       if (!opts.traducirUrl || pendiente) return;
       pendiente = true;
-      estadoIdioma(root, "ok", "Identificando el idioma y traduciendo el texto extraído…");
+      if (!esBase) estadoIdioma(root, "ok", t("Identificando el idioma y traduciendo el texto extraído…"));
       preview.setAttribute("aria-busy", "true");
       fetch(opts.traducirUrl, {
         method: "POST",
@@ -258,10 +270,10 @@
           pendiente = false;
           preview.setAttribute("aria-busy", "false");
           if (!j.valido) {
-            var msg = j.error || "El idioma ingresado no fue reconocido o no es válido. Por favor, verifica el nombre.";
+            var msg = j.error || t("El idioma ingresado no fue reconocido o no es válido. Por favor, verifica el nombre.");
             estadoIdioma(root, "error", msg);
             ultimoMeta = { error: msg, tts: false, traducido: false, nombre: dest };
-            textoMostrado = original;
+            textoMostrado = baseTexto;
             aplicar(preview, textoMostrado, seleccion(root), ultimoMeta);
             return;
           }
@@ -271,23 +283,26 @@
           var hayVoz = iaAudio && ttsSoporta(codigo);
           ultimoMeta = { traducido: true, nombre: nombre, codigo: codigo, tts: hayVoz };
           textoMostrado = j.texto || original;
+          if (esBase) {
+            baseTexto = textoMostrado;
+            baseMeta = ultimoMeta;
+            pintarVista();
+            return;
+          }
           if (hayVoz) {
-            estadoIdioma(root, "", "Texto traducido a " + nombre + ". Ya puedes escuchar la narración.");
+            estadoIdioma(root, "", t("Texto traducido a {nombre}. Ya puedes escuchar la narración.", { nombre: nombre }));
           } else {
-            estadoIdioma(
-              root,
-              "ok",
-              "El contenido ha sido traducido con éxito a " +
-                nombre +
-                ", pero la reproducción de voz en audio aún no está disponible para esta lengua."
-            );
+            estadoIdioma(root, "ok", msgSinVoz(nombre));
           }
           aplicar(preview, textoMostrado, seleccion(root), ultimoMeta);
         })
         .catch(function () {
           pendiente = false;
           preview.setAttribute("aria-busy", "false");
-          estadoIdioma(root, "error", "No se pudo comprobar el idioma. Inténtalo de nuevo.");
+          if (esBase) pintarVista();
+          estadoIdioma(root, "error", esBase
+            ? t("No se pudo traducir la clase ahora. Recarga la página para intentarlo de nuevo.")
+            : t("No se pudo comprobar el idioma. Inténtalo de nuevo."));
         });
     }
 
@@ -330,13 +345,7 @@
       var btn = ev.target.closest("[data-dua-hablar]");
       if (!btn) return;
       if (!ultimoMeta.tts || !ttsSoporta(codigoVoz())) {
-        estadoIdioma(
-          root,
-          "ok",
-          "El contenido ha sido traducido con éxito a " +
-            (ultimoMeta.nombre || "este idioma") +
-            ", pero la reproducción de voz en audio aún no está disponible para esta lengua."
-        );
+        estadoIdioma(root, "ok", msgSinVoz(ultimoMeta.nombre || t("este idioma")));
         return;
       }
       var nodoTexto = preview.querySelector(".texto") || preview.querySelector(".pildoras") || preview;
@@ -345,7 +354,16 @@
         setReproductorEstado(cajaAudio, "idle");
       });
     });
-    pintarVista();
+    if (opts.traducirAlCargar && opts.idiomaInicial && opts.traducirUrl && original) {
+      clasesCuerpo(seleccion(root));
+      preview.innerHTML =
+        "<p class='aviso' role='status'>" +
+        esc(t("Traduciendo la clase a {nombre}…", { nombre: opts.idiomaNombre || opts.idiomaInicial })) +
+        "</p>";
+      aplicarIdioma(opts.idiomaInicial, true);
+    } else {
+      pintarVista();
+    }
   }
 
   global.PrismaDUA = {

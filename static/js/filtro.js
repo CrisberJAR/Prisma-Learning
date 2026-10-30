@@ -1,6 +1,10 @@
 // Buscador en vivo: <input data-filtro="#contenedor"> oculta los hijos [data-buscar] que no coinciden.
 // Ignora mayúsculas y tildes ("biologia" encuentra "Biología") y anuncia el número de resultados.
 (function () {
+  // Traducción de la interfaz (templates/_i18n_js.html); sin catálogo devuelve el español.
+  var t = window.t || function (s, v) {
+    return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in v ? v[k] : m; }) : s;
+  };
   function normalizar(t) {
     return String(t || "")
       .toLowerCase()
@@ -33,7 +37,9 @@
       if (vacio) vacio.hidden = visibles > 0;
       if (estado) {
         estado.textContent = palabras.length
-          ? visibles + (visibles === 1 ? " resultado" : " resultados") + " de " + items.length
+          ? visibles === 1
+            ? t("1 resultado de {total}", { total: items.length })
+            : t("{n} resultados de {total}", { n: visibles, total: items.length })
           : "";
       }
     }

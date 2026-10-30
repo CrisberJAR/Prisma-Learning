@@ -1,99 +1,100 @@
 {% extends "base.html" %}
 {% block title %}{{ sesion.titulo }} · Prisma{% endblock %}
 {% block contenido %}
-<p><a class="btn" href="{{ url_for('panel.curso', curso_id=sesion.curso_id) }}">← Volver al curso</a></p>
+<p><a class="btn" href="{{ url_for('panel.curso', curso_id=sesion.curso_id) }}">← {{ _("Volver al curso") }}</a></p>
 <section class="glass caja">
   <div class="row">
     <div>
       <h1>{{ sesion.titulo }}</h1>
       <p>
         {% set chip_estado = 'ok' if sesion.estado == 'publicado' else ('w' if sesion.estado in ['revision', 'procesando'] else '') %}
-        <span class="chip {{ chip_estado }}">{{ sesion.estado }}</span>
-        <span class="mut"> · {% if sesion.tipo_archivo == 'tema' %}Generada desde el título{% else %}Tipo: {{ sesion.tipo_archivo }}{% endif %}</span>
+        <span class="chip {{ chip_estado }}">{{ sesion.estado | etiqueta }}</span>
+        <span class="mut"> · {% if sesion.tipo_archivo == 'tema' %}{{ _("Generada desde el título") }}{% else %}{{ _("Tipo") }}: {{ sesion.tipo_archivo }}{% endif %}</span>
       </p>
       {% if sesion.estado == 'publicado' %}
-        <p class="aviso ok" role="status">Publicado. Cada estudiante ve la clase con las necesidades DUA que le asignaste; puede ajustarlas durante el estudio.</p>
+        <p class="aviso ok" role="status">{{ _("Publicado. Cada estudiante ve la clase con las necesidades DUA que le asignaste; puede ajustarlas durante el estudio.") }}</p>
       {% endif %}
     </div>
     {% if sesion.estado == 'revision' %}
       <form method="post" action="{{ url_for('panel.publicar', sesion_id=sesion.id) }}">
-        <button class="btn p" type="submit">Publicar para estudiantes inscritos</button>
+        <button class="btn p" type="submit">{{ _("Publicar para estudiantes inscritos") }}</button>
       </form>
     {% endif %}
   </div>
   <details class="gestion">
-    <summary>Editar sesión</summary>
+    <summary>{{ _("Editar sesión") }}</summary>
     <form method="post" action="{{ url_for('panel.editar_sesion', sesion_id=sesion.id) }}">
       <p>
-        <label for="ed-titulo">Título de la sesión</label>
+        <label for="ed-titulo">{{ _("Título de la sesión") }}</label>
         <input id="ed-titulo" name="titulo" type="text" required maxlength="200" value="{{ sesion.titulo }}">
       </p>
       {% if sesion.estado != 'procesando' %}
       <p>
-        <label for="ed-texto">Texto de la clase</label>
+        <label for="ed-texto">{{ _("Texto de la clase") }}</label>
         <textarea id="ed-texto" name="texto" rows="12" aria-describedby="ed-texto-ayuda">{{ sesion.texto_extraido or '' }}</textarea>
-        <small id="ed-texto-ayuda" class="mut">Si cambias el texto, se borran los formatos DUA generados y se vuelven a crear la imagen y la mediación.{% if sesion.estado == 'publicado' %} Los estudiantes verán el texto nuevo de inmediato.{% endif %}</small>
+        <small id="ed-texto-ayuda" class="mut">{{ _("Si cambias el texto, se borran los formatos DUA generados y se vuelven a crear la imagen y la mediación.") }}{% if sesion.estado == 'publicado' %} {{ _("Los estudiantes verán el texto nuevo de inmediato.") }}{% endif %}</small>
       </p>
       {% endif %}
-      <p><button class="btn p" type="submit">Guardar cambios</button></p>
+      <p><button class="btn p" type="submit">{{ _("Guardar cambios") }}</button></p>
     </form>
   </details>
   <details class="gestion peligro">
-    <summary>Eliminar sesión</summary>
+    <summary>{{ _("Eliminar sesión") }}</summary>
     <form method="post" action="{{ url_for('panel.eliminar_sesion', sesion_id=sesion.id) }}">
-      <p class="aviso err">Se borrarán la sesión, sus formatos DUA, las dudas del tutor y el progreso de los estudiantes. No se puede deshacer.</p>
-      <p><label><input type="checkbox" name="confirmar" value="si" required> Entiendo que esta acción es definitiva</label></p>
-      <p><button class="btn d" type="submit">Eliminar sesión</button></p>
+      <p class="aviso err">{{ _("Se borrarán la sesión, sus formatos DUA, las dudas del tutor y el progreso de los estudiantes. No se puede deshacer.") }}</p>
+      <p><label><input type="checkbox" name="confirmar" value="si" required> {{ _("Entiendo que esta acción es definitiva") }}</label></p>
+      <p><button class="btn d" type="submit">{{ _("Eliminar sesión") }}</button></p>
     </form>
   </details>
 </section>
 
 <div class="tabs glass" role="tablist">
-  <button type="button" role="tab" id="tab-texto" aria-controls="panel-texto" aria-selected="true">Texto</button>
-  <button type="button" role="tab" id="tab-formatos" aria-controls="panel-formatos" aria-selected="false">Formatos DUA</button>
-  <button type="button" role="tab" id="tab-procesos" aria-controls="panel-procesos" aria-selected="false">Procesos y dudas</button>
+  <button type="button" role="tab" id="tab-texto" aria-controls="panel-texto" aria-selected="true">{{ _("Texto") }}</button>
+  <button type="button" role="tab" id="tab-formatos" aria-controls="panel-formatos" aria-selected="false">{{ _("Formatos DUA") }}</button>
+  <button type="button" role="tab" id="tab-procesos" aria-controls="panel-procesos" aria-selected="false">{{ _("Procesos y dudas") }}</button>
 </div>
 
 <section class="glass caja" id="panel-texto" role="tabpanel" aria-labelledby="tab-texto">
-  <h2 id="texto">Texto extraído</h2>
-  <pre class="texto">{{ sesion.texto_extraido or 'Aún no hay texto. Espera a que termine la extracción.' }}</pre>
+  <h2 id="texto">{{ _("Texto extraído") }}</h2>
+  {% if traducir_al_cargar %}<p class="mut">{{ _("Este es el texto original que escribiste o subiste. Cada estudiante lo ve traducido a su idioma; en «Formatos DUA» puedes ver la versión traducida.") }}</p>{% endif %}
+  <pre class="texto">{{ sesion.texto_extraido or _('Aún no hay texto. Espera a que termine la extracción.') }}</pre>
 </section>
 
 <section id="panel-formatos" role="tabpanel" aria-labelledby="tab-formatos">
   <div class="glass caja">
-    <h2 id="formatos">Formatos DUA</h2>
-    <p class="mut">Simulador para el docente: combina adaptaciones y mira el resultado al instante. No guarda cambios en el material original.</p>
+    <h2 id="formatos">{{ _("Formatos DUA") }}</h2>
+    <p class="mut">{{ _("Simulador para el docente: combina adaptaciones y mira el resultado al instante. No guarda cambios en el material original.") }}</p>
     {% include "_imagen_educativa.html" %}
     {% include "_mediacion.html" %}
     {% if sesion.texto_extraido %}
     <div class="dua-sim-grid">
       <form id="form-dua-sim" onsubmit="return false;">
-        {% with nombre_campo='dua_sim', seleccionadas=[], id_idioma='dua-sim-idioma', idioma_actual='es', leyenda='Necesidades educativas DUA (simulador)' %}
+        {% with nombre_campo='dua_sim', seleccionadas=[], id_idioma='dua-sim-idioma', idioma_actual='es', leyenda=_('Necesidades educativas DUA (simulador)') %}
         {% include "_dua_necesidades.html" %}
         {% endwith %}
       </form>
-      <div id="dua-preview" class="dua-preview" aria-live="polite" aria-label="Vista previa combinada DUA"></div>
+      <div id="dua-preview" class="dua-preview" aria-live="polite" aria-label="{{ _('Vista previa combinada DUA') }}"></div>
     </div>
     {% else %}
-    <p class="aviso">Cuando haya texto de la clase, aquí podrás simular las adaptaciones DUA.</p>
+    <p class="aviso">{{ _("Cuando haya texto de la clase, aquí podrás simular las adaptaciones DUA.") }}</p>
     {% endif %}
   </div>
 </section>
 
 <section class="glass caja" id="panel-procesos" role="tabpanel" aria-labelledby="tab-procesos">
-  <h2 id="jobs">Procesos en segundo plano</h2>
+  <h2 id="jobs">{{ _("Procesos en segundo plano") }}</h2>
   {% if jobs %}
     <ul class="lista">
       {% for j in jobs %}
         <li>
-          <p data-job-label="{{ j.id }}">{{ j.tipo }}{% if j.formato %} / {{ j.formato }}{% endif %} · {{ j.estado }} · {{ j.progreso or 0 }}%</p>
-          <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ j.progreso or 0 }}" aria-label="{{ j.tipo }} {{ j.formato or '' }}" data-job-id="{{ j.id }}">
+          <p data-job-label="{{ j.id }}">{{ j.tipo | etiqueta }}{% if j.formato %} / {{ _(nombres.get(j.formato, j.formato)) }}{% endif %} · {{ j.estado | etiqueta }} · {{ j.progreso or 0 }}%</p>
+          <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ j.progreso or 0 }}" aria-label="{{ j.tipo | etiqueta }} {{ j.formato or '' }}" data-job-id="{{ j.id }}" data-job-estado="{{ j.estado }}">
             <i style="width: {{ j.progreso or 0 }}%"></i>
           </div>
           {% if j.error %}<p class="aviso err">{{ j.error }}</p>{% endif %}
           {% if j.estado == 'failed' %}
             <form method="post" action="{{ url_for('panel.reintentar', job_id=j.id) }}">
-              <button class="btn p" type="submit">Reintentar</button>
+              <button class="btn p" type="submit">{{ _("Reintentar") }}</button>
             </form>
           {% endif %}
         </li>
@@ -102,12 +103,12 @@
   {% else %}
     <div class="empty">
       <div class="o"></div>
-      <b>No hay jobs todavía</b>
-      Aquí verás la extracción u otros procesos en segundo plano.
+      <b>{{ _("No hay procesos todavía") }}</b>
+      {{ _("Aquí verás la extracción u otros procesos en segundo plano.") }}
     </div>
   {% endif %}
 
-  <h2 id="dudas">Dudas enviadas por estudiantes</h2>
+  <h2 id="dudas">{{ _("Dudas enviadas por estudiantes") }}</h2>
   {% if dudas %}
     <ul class="lista">
       {% for d in dudas %}
@@ -115,7 +116,7 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p class="mut">Nadie ha enviado dudas todavía. No se muestran nombres si no hace falta.</p>
+    <p class="mut">{{ _("Nadie ha enviado dudas todavía. No se muestran nombres si no hace falta.") }}</p>
   {% endif %}
 </section>
 <script type="application/json" id="dua-texto">{{ (sesion.texto_extraido or '') | tojson }}</script>
@@ -134,7 +135,10 @@
         root: "#form-dua-sim",
         preview: "#dua-preview",
         texto: texto,
-        traducirUrl: {{ url_for('panel.dua_traducir', sesion_id=sesion.id) | tojson }}
+        traducirUrl: {{ url_for('panel.dua_traducir', sesion_id=sesion.id) | tojson }},
+        traducirAlCargar: {{ traducir_al_cargar | tojson }},
+        idiomaInicial: {{ idioma_contenido | tojson }},
+        idiomaNombre: {{ _(idioma_contenido) | tojson }}
       });
     }
   });

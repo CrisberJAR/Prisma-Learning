@@ -51,6 +51,10 @@ class _Consulta:
         return self
 
     def upsert(self, fila, on_conflict="id"):
+        if isinstance(fila, list):
+            # Varias filas: se aplican una a una y se devuelven todas juntas.
+            self.op, self.lote, self.on_conflict = "upsert_lote", [dict(f) for f in fila], on_conflict
+            return self
         self.op, self.payload, self.on_conflict = "upsert", dict(fila), on_conflict
         return self
 
@@ -71,6 +75,12 @@ class _Consulta:
             fila = {"id": str(uuid.uuid4()), **self.payload}
             filas.append(fila)
             return _Resultado([dict(fila)])
+        if self.op == "upsert_lote":
+            out = []
+            for fila in self.lote:
+                sub = _Consulta(self.db, self.tabla).upsert(fila, on_conflict=self.on_conflict)
+                out += sub.execute().data
+            return _Resultado(out)
         if self.op == "upsert":
             clave = self.payload.get(self.on_conflict)
             existente = next((f for f in filas if f.get(self.on_conflict) == clave), None)
