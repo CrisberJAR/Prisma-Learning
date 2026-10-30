@@ -1,11 +1,11 @@
 {% extends "estudiante/base.html" %}
 {% block title %}{{ _("Ejercicios") }} · {{ titulo }} · Prisma{% endblock %}
 {% block contenido %}
-<p><a class="btn" href="{{ url_for('estudiante.sesion', sesion_id=sesion.id) }}">← {{ _("Volver a la clase") }}</a></p>
+<p><a class="btn" href="{{ url_for('estudiante.sesion', sesion_id=sesion.id) }}">{{ icono('arrow-left') }}{{ _("Volver a la clase") }}</a></p>
 
 {% if not intento %}
 <section class="glass caja">
-  <h1>{{ _("Ejercicios") }} · {{ titulo }}</h1>
+  <div class="titulo"><span class="ico-tile">{{ icono('clipboard') }}</span><h1>{{ _("Ejercicios") }} · {{ titulo }}</h1></div>
   <p class="mut">{{ _("Responde con calma. Tienes un solo intento: al enviar, verás tu resultado y una explicación de cada ejercicio.") }}</p>
 </section>
 <form method="post" id="form-resolver" data-esperando="{{ _('Evaluando tus respuestas… puede tardar unos segundos.') }}">
@@ -31,14 +31,19 @@
     </li>
     {% endfor %}
   </ol>
-  <p class="acciones"><button class="btn p" type="submit">{{ _("Enviar respuestas") }}</button></p>
+  <p class="acciones"><button class="btn p" type="submit">{{ icono('send') }}{{ _("Enviar respuestas") }}</button></p>
 </form>
 
 {% else %}
 <section class="glass caja">
-  <h1>{{ _("Tu resultado") }} · {{ titulo }}</h1>
+  <div class="titulo"><span class="ico-tile ok">{{ icono('award') }}</span><h1>{{ _("Tu resultado") }} · {{ titulo }}</h1></div>
   {% if intento.puntaje is not none %}
-    <p class="resultado-puntaje"><b>{{ intento.puntaje | round | int }}%</b>{% if nivel %} · <span class="chip nivel-{{ nivel }}">{{ nivel | etiqueta }}</span>{% endif %}</p>
+    {% set p = intento.puntaje | round | int %}
+    <div class="resultado">
+      <div class="anillo nivel-{{ nivel }}" style="--valor:{{ p }}" role="img" aria-label="{{ p }}%"><b>{{ p }}%</b></div>
+      <p class="resultado-puntaje sr-only"><b>{{ p }}%</b></p>
+      {% if nivel %}<p><span class="chip nivel-{{ nivel }}">{{ icono('target') }}{{ nivel | etiqueta }}</span></p>{% endif %}
+    </div>
   {% else %}
     <p class="aviso">{{ _("Tu docente está revisando las respuestas abiertas. Vuelve más tarde para ver tu resultado completo.") }}</p>
   {% endif %}
@@ -56,9 +61,9 @@
     </p>
     <p>
       {% if r.puntaje is none %}<span class="chip w">{{ _("Pendiente") }}</span>
-      {% elif r.puntaje >= 1 %}<span class="chip ok">✓ {{ _("Correcta") }}</span>
+      {% elif r.puntaje >= 1 %}<span class="chip ok">{{ icono('check') }}{{ _("Correcta") }}</span>
       {% elif r.puntaje > 0 %}<span class="chip w">{{ _("Parcialmente correcta") }}</span>
-      {% else %}<span class="chip">✗ {{ _("Incorrecta") }}</span>{% endif %}
+      {% else %}<span class="chip nivel-inicial">{{ icono('x') }}{{ _("Incorrecta") }}</span>{% endif %}
     </p>
     {% if it.tipo != 'abierta' and r.puntaje is not none and r.puntaje < 1 %}
       <p>{{ _("Respuesta correcta") }}:
@@ -66,7 +71,7 @@
       </p>
     {% endif %}
     {% if r.comentario %}<p><span class="ia">IA</span> {{ r.comentario }}</p>{% endif %}
-    {% if it.explicacion %}<p class="mut">{{ it.explicacion }}</p>{% endif %}
+    {% if it.explicacion %}<p class="mut">{{ icono('bulb') }} {{ it.explicacion }}</p>{% endif %}
   </li>
   {% endfor %}
 </ol>

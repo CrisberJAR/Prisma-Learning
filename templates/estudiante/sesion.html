@@ -2,30 +2,30 @@
 {% block title %}{{ sesion.titulo }} · Prisma{% endblock %}
 {% block body_class %}{{ body_dua }}{% endblock %}
 {% block contenido %}
-<p><a class="btn" href="{{ url_for('estudiante.mochila') }}">← {{ _("Mi mochila") }}</a></p>
+<p><a class="btn" href="{{ url_for('estudiante.mochila') }}">{{ icono('arrow-left') }}{{ _("Mi mochila") }}</a></p>
 <section class="glass caja">
-  <h1>{{ sesion.titulo }}</h1>
+  <div class="titulo"><span class="ico-tile">{{ icono('book') }}</span><h1>{{ sesion.titulo }}</h1></div>
   <p class="mut">{{ _("La clase se muestra con los ajustes que tu docente configuró para ti. Si quieres ver el material de otra forma, usa los ajustes del panel lateral: solo aplican en esta sesión y no cambian tu perfil del curso.") }}</p>
 </section>
 
 <div class="split">
   <div>
     <article class="glass caja formato-leccion" aria-labelledby="t-leccion">
-      <h2 id="t-leccion">{{ _("Clase adaptada") }}</h2>
+      <h2 id="t-leccion" class="titulo">{{ icono('sparkles') }} {{ _("Clase adaptada") }}</h2>
       {% include "_imagen_educativa.html" %}
       {% include "_mediacion.html" %}
       <div id="dua-preview" class="dua-preview" aria-live="polite"></div>
     </article>
     {% if ejercicios_estado %}
     <article class="glass caja" aria-labelledby="t-ejercicios">
-      <h2 id="t-ejercicios">{{ _("Ejercicios de la sesión") }}</h2>
+      <div class="titulo"><span class="ico-tile ok">{{ icono('clipboard') }}</span><h2 id="t-ejercicios">{{ _("Ejercicios de la sesión") }}</h2></div>
       {% if ejercicios_estado.intento %}
         {% set it = ejercicios_estado.intento %}
         <p>{% if it.puntaje is not none %}{{ _("Ya los resolviste: obtuviste {p}%.", p=it.puntaje | round | int) }}{% else %}{{ _("Ya enviaste tus respuestas.") }}{% endif %}</p>
-        <p><a class="btn" href="{{ url_for('estudiante.resolver_ejercicios', sesion_id=sesion.id) }}">{{ _("Ver mi resultado") }}</a></p>
+        <p><a class="btn" href="{{ url_for('estudiante.resolver_ejercicios', sesion_id=sesion.id) }}">{{ icono('award') }}{{ _("Ver mi resultado") }}</a></p>
       {% else %}
         <p>{{ _("Tu docente preparó {n} ejercicios para comprobar lo que aprendiste.", n=ejercicios_estado.n) }}</p>
-        <p><a class="btn p" href="{{ url_for('estudiante.resolver_ejercicios', sesion_id=sesion.id) }}">{{ _("Resolver ejercicios") }}</a></p>
+        <p><a class="btn p" href="{{ url_for('estudiante.resolver_ejercicios', sesion_id=sesion.id) }}">{{ icono('clipboard') }}{{ _("Resolver ejercicios") }}</a></p>
       {% endif %}
     </article>
     {% endif %}
@@ -37,12 +37,12 @@
         {% with nombre_campo='activos', seleccionadas=activos, id_idioma='dua-idioma-est', idioma_actual=idioma_actual, leyenda=_('Ajustes de lectura / DUA (solo esta sesión)') %}
         {% include "_dua_necesidades.html" %}
         {% endwith %}
-        <p><button class="btn p" type="submit">{{ _("Aplicar en esta sesión") }}</button></p>
+        <p><button class="btn p" type="submit">{{ icono('check') }}{{ _("Aplicar en esta sesión") }}</button></p>
       </form>
     </nav>
 
     <aside class="glass caja" aria-labelledby="tutor">
-      <h2 id="tutor">{{ _("Tutor de esta sesión") }}</h2>
+      <div class="titulo"><span class="ico-tile">{{ icono('message') }}</span><h2 id="tutor">{{ _("Tutor de esta sesión") }}</h2></div>
       <p>{{ _("Solo responde con el material. Es una IA y puede equivocarse.") }} <strong>{{ _("El tutor requiere conexión a internet.") }}</strong> {{ _("{n} / {max} mensajes hoy.", n=cuota, max=cuota_max) }}</p>
       <p>
         <label class="chk">
@@ -61,14 +61,14 @@
           <textarea id="pregunta" name="pregunta" rows="3" required aria-describedby="tutor chat-estado"></textarea>
         </p>
         <p class="acciones">
-          <button class="btn p" type="submit">{{ _("Preguntar") }}</button>
-          <button class="btn" type="button" id="btn-duda">{{ _("Enviar esta duda a mi profesor") }}</button>
-          <button class="btn" type="button" id="btn-voz" aria-pressed="false">{{ _("Dictar") }}</button>
+          <button class="btn p" type="submit">{{ icono('send') }}{{ _("Preguntar") }}</button>
+          <button class="btn" type="button" id="btn-duda">{{ icono('help') }}{{ _("Enviar esta duda a mi profesor") }}</button>
+          <button class="btn" type="button" id="btn-voz" aria-pressed="false">{{ icono('mic') }}{{ _("Dictar") }}</button>
           <span class="dua-audio tts-tutor" id="tts-tutor">
-          <button class="btn" type="button" id="btn-leer" data-dua-hablar>{{ _("Escuchar respuesta") }}</button>
-          <button class="btn" type="button" id="btn-pausar-lectura" data-dua-pausar hidden>{{ _("Pausar") }}</button>
-          <button class="btn p" type="button" id="btn-continuar-lectura" data-dua-continuar hidden>{{ _("Continuar") }}</button>
-          <button class="btn d" type="button" id="btn-detener-lectura" data-dua-parar hidden>{{ _("Detener") }}</button>
+          <button class="btn" type="button" id="btn-leer" data-dua-hablar>{{ icono('volume') }}{{ _("Escuchar respuesta") }}</button>
+          <button class="btn" type="button" id="btn-pausar-lectura" data-dua-pausar hidden>{{ icono('pause') }}{{ _("Pausar") }}</button>
+          <button class="btn p" type="button" id="btn-continuar-lectura" data-dua-continuar hidden>{{ icono('play') }}{{ _("Continuar") }}</button>
+          <button class="btn d" type="button" id="btn-detener-lectura" data-dua-parar hidden>{{ icono('stop') }}{{ _("Detener") }}</button>
         </span>
         </p>
       </form>
@@ -80,7 +80,7 @@
             {{ _("Confirmo que quiero borrar mi chat de esta sesión") }}
           </label>
         </p>
-        <p><button class="btn d" type="submit">{{ _("Borrar mi chat de esta sesión") }}</button></p>
+        <p><button class="btn d" type="submit">{{ icono('trash') }}{{ _("Borrar mi chat de esta sesión") }}</button></p>
       </form>
     </aside>
   </div>

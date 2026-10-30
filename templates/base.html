@@ -6,25 +6,13 @@
   <title>{% block title %}Prisma{% endblock %}</title>
   {% include "_fuentes.html" %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-  <meta name="theme-color" content="#1f5bff">
+  <meta name="theme-color" content="#0b1437">
   {% include "_i18n_js.html" %}
 </head>
 <body>
+  {% include "_iconos.html" %}
   <a class="skip" href="#contenido">{{ _("Saltar al contenido") }}</a>
-  <header class="top glass">
-    <a class="marca" href="{{ url_for('panel.cursos') }}"><i></i>Prisma <small>· {{ _("panel docente") }}</small></a>
-    {% if g.usuario %}
-    <span class="sp who">{{ g.usuario.nombre }}</span>
-    {% endif %}
-    {% include "_selector_idioma.html" %}
-    {% if g.usuario %}
-    <a class="btn" href="{{ url_for('auth.cambiar_clave') }}">{{ _("Mi contraseña") }}</a>
-    <a class="btn" href="{{ url_for('privacidad') }}">{{ _("Privacidad") }}</a>
-    <form action="{{ url_for('auth.salir') }}" method="post">
-      <button class="btn" type="submit">{{ _("Cerrar sesión") }}</button>
-    </form>
-    {% endif %}
-  </header>
+  {% with inicio=url_for('panel.cursos'), etiqueta_panel=_("panel docente") %}{% include "_cabecera.html" %}{% endwith %}
   <main id="contenido" tabindex="-1">
     <div class="wrap">
       {% with mensajes = get_flashed_messages(with_categories=true) %}

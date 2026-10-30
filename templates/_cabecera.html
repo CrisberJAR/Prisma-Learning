@@ -1,0 +1,15 @@
+{# Cabecera común. Variables: inicio (url de la marca), etiqueta_panel. #}
+<header class="top">
+  <a class="marca" href="{{ inicio }}"><svg class="logo" aria-hidden="true"><use href="#i-logo"></use></svg>Prisma <small>{{ etiqueta_panel }}</small></a>
+  {% if g.usuario %}
+  <span class="sp who"><span class="avatar" aria-hidden="true">{{ (g.usuario.nombre or '?')[:1] | upper }}</span><span>{{ g.usuario.nombre }}</span></span>
+  {% else %}<span class="sp"></span>{% endif %}
+  {% include "_selector_idioma.html" %}
+  {% if g.usuario %}
+  <a class="btn" href="{{ url_for('auth.cambiar_clave') }}" title="{{ _('Mi contraseña') }}">{{ icono('key') }}<span class="lbl">{{ _("Mi contraseña") }}</span></a>
+  <a class="btn" href="{{ url_for('privacidad') }}" title="{{ _('Privacidad') }}">{{ icono('shield') }}<span class="lbl">{{ _("Privacidad") }}</span></a>
+  <form action="{{ url_for('auth.salir') }}" method="post">
+    <button class="btn" type="submit" title="{{ _('Cerrar sesión') }}">{{ icono('log-out') }}<span class="lbl">{{ _("Cerrar sesión") }}</span></button>
+  </form>
+  {% endif %}
+</header>

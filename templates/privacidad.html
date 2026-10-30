@@ -6,13 +6,14 @@
   <title>{{ _("Privacidad") }} · Prisma</title>
   {% include "_fuentes.html" %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-  <meta name="theme-color" content="#1f5bff">
+  <meta name="theme-color" content="#0b1437">
 </head>
 <body>
+  {% include "_iconos.html" %}
   <a class="skip" href="#contenido">{{ _("Saltar al contenido") }}</a>
   <main id="contenido" class="hero-ancho glass caja" tabindex="-1">
     <div class="row">
-      <h1>{{ _("Privacidad y datos personales") }}</h1>
+      <div class="titulo"><span class="ico-tile">{{ icono('shield') }}</span><h1>{{ _("Privacidad y datos personales") }}</h1></div>
       {% with sufijo='priv' %}{% include "_selector_idioma.html" %}{% endwith %}
     </div>
     <p>{{ _("Prisma trata datos para ofrecer materiales educativos accesibles. Se rige por la Ley 29733 (Perú) y su reglamento: finalidad determinada, consentimiento informado y seguridad razonable.") }}</p>
@@ -38,7 +39,7 @@
     <p>{{ _("El tutor y algunos formatos se generan con IA, solo a partir del material de la sesión. El contenido entre datos no se interpreta como instrucciones. Todo texto de IA lleva marca visible y el docente puede editarlo antes de publicar.") }}</p>
     {% if idioma_ui != 'es' %}<p class="mut">{{ _("Traducción informativa. La versión en español es la que tiene validez legal.") }}</p>{% endif %}
 
-    <p><a class="btn" href="{{ url_for('auth.entrar') }}">{{ _("Volver a entrar") }}</a></p>
+    <p class="acciones"><a class="btn p" href="{{ url_for('auth.entrar') }}">{{ icono('log-in') }}{{ _("Volver a entrar") }}</a></p>
   </main>
 </body>
 </html>

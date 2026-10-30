@@ -1,15 +1,15 @@
 <section class="glass caja" id="panel-resultados" role="tabpanel" aria-labelledby="tab-resultados">
-  <h2 id="resultados">{{ _("Resultados de los estudiantes") }}</h2>
+  <div class="titulo"><span class="ico-tile">{{ icono('chart') }}</span><h2 id="resultados">{{ _("Resultados de los estudiantes") }}</h2></div>
   {% if not resultados.total %}
     <div class="empty">
-      <div class="o"></div>
+      <div class="o">{{ icono('chart') }}</div>
       <b>{{ _("Aún no hay respuestas") }}</b>
       {{ _("Cuando los estudiantes resuelvan los ejercicios publicados, verás aquí su diagnóstico.") }}
     </div>
   {% else %}
-    <div class="g2">
-      <p class="chip">{{ _("{n} respuestas", n=resultados.total) }}</p>
-      {% if resultados.promedio is not none %}<p class="chip">{{ _("Promedio: {p}%", p=resultados.promedio) }}</p>{% endif %}
+    <div class="stats">
+      <div class="stat"><span class="ico-tile">{{ icono('users') }}</span><div><b>{{ resultados.total }}</b><span>{{ _("{n} respuestas", n=resultados.total) }}</span></div></div>
+      {% if resultados.promedio is not none %}<div class="stat"><span class="ico-tile ok">{{ icono('award') }}</span><div><b>{{ resultados.promedio | round | int }}%</b><span>{{ _("Promedio: {p}%", p=resultados.promedio) }}</span></div></div>{% endif %}
     </div>
 
     <h3>{{ _("Estudiantes") }}</h3>
@@ -26,13 +26,13 @@
         <tbody>
           {% for e in resultados.estudiantes %}
           <tr>
-            <td>{{ e.nombre }}{% if e.email %}<br><small class="mut">{{ e.email }}</small>{% endif %}</td>
+            <td><span class="titulo"><span class="avatar" aria-hidden="true">{{ (e.nombre or '?')[:1] | upper }}</span><span>{{ e.nombre }}{% if e.email %}<br><small class="mut">{{ e.email }}</small>{% endif %}</span></span></td>
             <td>{% if e.puntaje is not none %}{{ e.puntaje | round | int }}%{% else %}—{% endif %}</td>
             <td>
               {% if e.estado == 'error' %}<span class="chip w">{{ _("Evaluación pendiente") }}</span>
               {% elif e.nivel %}<span class="chip nivel-{{ e.nivel }}">{{ e.nivel | etiqueta }}</span>{% endif %}
             </td>
-            <td><a class="btn" href="{{ url_for('panel.informe', respuesta_id=e.id) }}">{{ _("Ver informe") }}</a></td>
+            <td><a class="btn" href="{{ url_for('panel.informe', respuesta_id=e.id) }}">{{ icono('file') }}{{ _("Ver informe") }}</a></td>
           </tr>
           {% endfor %}
         </tbody>
@@ -40,7 +40,7 @@
     </div>
 
     {% if resultados.por_ejercicio %}
-    <h3>{{ _("Ejercicios con más dificultad") }}</h3>
+    <h3 class="titulo">{{ icono('target') }} {{ _("Ejercicios con más dificultad") }}</h3>
     <ul class="lista">
       {% for e in resultados.por_ejercicio[:5] %}
       <li>

@@ -2,7 +2,7 @@
 {% block title %}{{ _("Cambiar contraseña") }} · Prisma{% endblock %}
 {% block contenido %}
 <section class="glass caja caja-estrecha">
-  <h1>{{ _("Cambiar contraseña") }}</h1>
+  <div class="titulo"><span class="ico-tile">{{ icono('key') }}</span><h1>{{ _("Cambiar contraseña") }}</h1></div>
   {% if obligatorio %}
   <p class="aviso" role="status">{{ _("Entraste con una contraseña temporal que te dio tu docente. Crea una propia para continuar.") }}</p>
   {% else %}
@@ -24,7 +24,7 @@
       <input id="confirmar" name="confirmar" type="password" autocomplete="new-password" spellcheck="false" minlength="8" required>
     </p>
     <p class="acciones">
-      <button class="btn p" type="submit">{{ _("Guardar contraseña") }}</button>
+      <button class="btn p" type="submit">{{ icono('check') }}{{ _("Guardar contraseña") }}</button>
       {% if not obligatorio %}
       <a class="btn" href="{{ url_for('raiz') }}">{{ _("Cancelar") }}</a>
       {% endif %}

@@ -1,12 +1,12 @@
 <article class="img-edu img-edu-card glass caja" id="imagen-educativa" data-img-url="{{ url_imagen }}">
-  <h3>{{ _("Imagen educativa del tema") }}</h3>
-  <p class="mut" id="img-edu-estado" role="status">{{ _("Preparando una ilustración del tema…") }}</p>
+  <h3 class="titulo">{{ icono('image') }} {{ _("Imagen educativa del tema") }}</h3>
+  <p class="mut" id="img-edu-estado" role="status"><span class="cargando">{{ _("Preparando una ilustración del tema…") }}</span></p>
   <figure class="img-edu-figura">
     <img id="img-edu" alt="{{ _('Imagen educativa del tema') }}" width="1024" height="576" hidden>
   </figure>
   {% if rol_mediacion == 'docente' %}
   <details class="gestion" id="img-edu-prompt" hidden>
-    <summary>{{ _("Ver prompt de la imagen") }}</summary>
+    <summary>{{ icono('eye') }}{{ _("Ver prompt de la imagen") }}</summary>
     <p class="mut">{{ _("Texto exacto enviado al modelo de imagen (FLUX). Lo redacta la IA a partir del tema y el nivel del curso.") }}</p>
     <pre class="texto prompt" id="img-edu-prompt-texto"></pre>
   </details>

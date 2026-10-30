@@ -48,6 +48,16 @@
     return n;
   }
 
+  function icono(nombre) {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "ico");
+    svg.setAttribute("aria-hidden", "true");
+    var use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    use.setAttribute("href", "#i-" + nombre);
+    svg.appendChild(use);
+    return svg;
+  }
+
   function campo(id, etiqueta, control) {
     return el("p", {}, [el("label", { htmlFor: id, texto: etiqueta }), control]);
   }
@@ -97,7 +107,8 @@
           radio.addEventListener("change", function () { it.correcta = j; marcar(); });
           var texto = el("input", { type: "text", value: op, "aria-label": t("Texto de la opción {n}", { n: j + 1 }), maxLength: 300 });
           texto.addEventListener("input", function () { it.opciones[j] = texto.value; marcar(); });
-          var quitar = el("button", { type: "button", className: "btn", texto: "✕", "aria-label": t("Quitar la opción {n}", { n: j + 1 }), disabled: it.opciones.length <= 2 });
+          var quitar = el("button", { type: "button", className: "btn", "aria-label": t("Quitar la opción {n}", { n: j + 1 }), disabled: it.opciones.length <= 2 });
+          quitar.appendChild(icono("x"));
           quitar.addEventListener("click", function () {
             it.opciones.splice(j, 1);
             if (it.correcta >= it.opciones.length) it.correcta = 0;
@@ -108,7 +119,7 @@
           grupo.appendChild(el("p", { className: "opcion" }, [radio, texto, quitar]));
         });
         if (it.opciones.length < 6) {
-          var mas = el("button", { type: "button", className: "btn", texto: "+ " + t("Agregar opción") });
+          var mas = el("button", { type: "button", className: "btn" }, [icono("plus"), document.createTextNode(t("Agregar opción"))]);
           mas.addEventListener("click", function () { it.opciones.push(""); marcar(); pintar(); });
           grupo.appendChild(mas);
         }
@@ -132,11 +143,13 @@
       tarjeta.appendChild(campo(pre + "explicacion", t("Explicación para el estudiante (se muestra al terminar)"), expl));
 
       var acciones = el("p", { className: "acciones" });
-      var subir = el("button", { type: "button", className: "btn", texto: "↑", "aria-label": t("Subir el ejercicio {n}", { n: i + 1 }), disabled: i === 0 });
+      var subir = el("button", { type: "button", className: "btn", "aria-label": t("Subir el ejercicio {n}", { n: i + 1 }), disabled: i === 0 });
+      subir.appendChild(icono("arrow-up"));
       subir.addEventListener("click", function () { items.splice(i - 1, 0, items.splice(i, 1)[0]); marcar(); pintar(); });
-      var bajar = el("button", { type: "button", className: "btn", texto: "↓", "aria-label": t("Bajar el ejercicio {n}", { n: i + 1 }), disabled: i === items.length - 1 });
+      var bajar = el("button", { type: "button", className: "btn", "aria-label": t("Bajar el ejercicio {n}", { n: i + 1 }), disabled: i === items.length - 1 });
+      bajar.appendChild(icono("arrow-down"));
       bajar.addEventListener("click", function () { items.splice(i + 1, 0, items.splice(i, 1)[0]); marcar(); pintar(); });
-      var borrar = el("button", { type: "button", className: "btn d", texto: t("Eliminar ejercicio") });
+      var borrar = el("button", { type: "button", className: "btn d" }, [icono("trash"), document.createTextNode(t("Eliminar ejercicio"))]);
       borrar.addEventListener("click", function () {
         if (!window.confirm(t("¿Eliminar el ejercicio {n}?", { n: i + 1 }))) return;
         items.splice(i, 1);

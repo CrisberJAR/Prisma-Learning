@@ -103,6 +103,7 @@ def construir_prompt(sesion: dict, cantidad: int, tipos: list[str], nivel: str) 
         f"Nivel educativo de los estudiantes: {nivel or 'no indicado'}. Adapta vocabulario y dificultad a ese nivel.\n"
         f"Tipos permitidos: {nombres}. Mézclalos y ordena de menor a mayor dificultad.\n"
         "Cubre las ideas principales del material, no detalles menores. No inventes datos que no estén en el material.\n"
+        "Escribe las fórmulas con símbolos Unicode legibles (∫, ², √, ≤, π, x₁), nunca en LaTeX ni con llaves o guiones bajos.\n"
         f"Escribe todo en idioma «{idioma}».\n"
         "Devuelve únicamente JSON con esta forma:\n"
         '{"ejercicios": [\n'
