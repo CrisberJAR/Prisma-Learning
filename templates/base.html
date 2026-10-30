@@ -14,6 +14,7 @@
     <a class="marca" href="{{ url_for('panel.cursos') }}"><i></i>Prisma <small>· panel docente</small></a>
     {% if g.usuario %}
     <span class="sp who">{{ g.usuario.nombre }}</span>
+    <a class="btn" href="{{ url_for('auth.cambiar_clave') }}">Mi contraseña</a>
     <a class="btn" href="{{ url_for('privacidad') }}">Privacidad</a>
     <form action="{{ url_for('auth.salir') }}" method="post">
       <button class="btn" type="submit">Cerrar sesión</button>

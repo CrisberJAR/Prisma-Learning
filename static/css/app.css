@@ -140,3 +140,15 @@ body.dua-baja_vision .btn.p{background:#ffe600;color:#000}
 .med-lista strong{color:var(--ink);font-weight:800}
 body.dua-baja_vision .med-ico,body.dua-baja_vision .med-lista li{background:#000;border-color:#fff;color:#fff}
 body.dua-baja_vision .med-lista strong{color:#ffe600}
+/* Fase 1: cuenta, credencial temporal, edición/borrado y buscador */
+.caja-estrecha{max-width:34rem;margin:0 auto}
+.credencial{border-color:#2fb57a}
+.credencial code{font:700 1.25rem/1.3 ui-monospace,Consolas,monospace;background:#fff;padding:.2rem .6rem;border-radius:8px;user-select:all}
+details.gestion{margin-top:.8rem}
+details.gestion>summary{cursor:pointer;font-weight:700;min-height:2.75rem;display:flex;align-items:center}
+details.gestion.peligro>summary{color:var(--err)}
+.buscador{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:1rem 0}
+.buscador input{flex:1 1 16rem}
+.buscador [role=status]{color:var(--mut);font-size:.9rem}
+.est-acciones{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}

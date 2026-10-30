@@ -1,6 +1,6 @@
 from flask import Blueprint, flash, g, jsonify, redirect, render_template, request, url_for
 
-from services import analitica, chat_service, dua, imagen_educativa, jobs, materiales, mediacion, package_builder
+from services import analitica, chat_service, cuentas, dua, imagen_educativa, jobs, materiales, mediacion, package_builder
 from services import cursos as svc
 from services.auth import requiere_pagina, requiere_rol
 
@@ -16,8 +16,11 @@ def inicio():
 @bp.get("/cursos")
 @requiere_pagina("docente")
 def cursos():
-    lista = svc.listar_cursos(g.usuario["id"])
-    return render_template("docente/cursos.html", cursos=lista, niveles_cine=svc.NIVELES_CINE)
+    q = (request.args.get("q") or "").strip()
+    lista = svc.filtrar(
+        svc.listar_cursos(g.usuario["id"]), q, "nombre_curso", "descripcion", "nivel_educativo_etiqueta"
+    )
+    return render_template("docente/cursos.html", cursos=lista, niveles_cine=svc.NIVELES_CINE, q=q)
 
 
 @bp.post("/cursos")
@@ -37,9 +40,40 @@ def crear_curso():
     return redirect(url_for("panel.curso", curso_id=curso["id"]))
 
 
-def _pagina_curso(curso_id: str, previa: dict | None = None, codigo: int = 200):
-    lista = svc.listar_cursos(g.usuario["id"])
-    curso = next((c for c in lista if c["id"] == curso_id), None)
+@bp.post("/cursos/<uuid:curso_id>/editar")
+@requiere_pagina("docente")
+def editar_curso(curso_id):
+    curso_id = str(curso_id)
+    try:
+        svc.editar_curso(
+            curso_id,
+            g.usuario["id"],
+            request.form.get("nombre", ""),
+            request.form.get("descripcion", ""),
+            request.form.get("nivel_educativo", ""),
+        )
+    except ValueError as exc:
+        flash(str(exc), "error")
+    else:
+        flash("Curso actualizado.", "ok")
+    return redirect(url_for("panel.curso", curso_id=curso_id))
+
+
+@bp.post("/cursos/<uuid:curso_id>/eliminar")
+@requiere_pagina("docente")
+def eliminar_curso(curso_id):
+    curso_id = str(curso_id)
+    try:
+        svc.eliminar_curso(curso_id, g.usuario["id"], request.form.get("confirmacion", ""))
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("panel.curso", curso_id=curso_id))
+    flash("Curso eliminado con sus sesiones e inscripciones. Las cuentas de los estudiantes se conservan.", "ok")
+    return redirect(url_for("panel.cursos"))
+
+
+def _pagina_curso(curso_id: str, previa: dict | None = None, codigo: int = 200, credencial: dict | None = None):
+    curso = svc.obtener_curso(curso_id, g.usuario["id"])
     if curso is None:
         return ("Curso no encontrado.", 404)
     sesiones = svc.sesiones_de_curso(curso_id)
@@ -58,6 +92,8 @@ def _pagina_curso(curso_id: str, previa: dict | None = None, codigo: int = 200):
         tipos=sorted(materiales.TIPOS_PERMITIDOS),
         accept_archivos=materiales.accept_html(),
         previa=previa,
+        niveles_cine=svc.NIVELES_CINE,
+        credencial=credencial,
     )
     return html, codigo
 
@@ -77,8 +113,7 @@ def analitica_curso(curso_id):
     curso_id = str(curso_id)
     if not materiales.docente_es_dueno(curso_id, g.usuario["id"]):
         return ("Curso no encontrado.", 404)
-    lista = svc.listar_cursos(g.usuario["id"])
-    curso = next((c for c in lista if c["id"] == curso_id), None)
+    curso = svc.obtener_curso(curso_id, g.usuario["id"])
     if curso is None:
         return ("Curso no encontrado.", 404)
     return render_template("docente/analitica.html", curso=curso, resumen=analitica.resumen_curso(curso_id))
@@ -182,7 +217,7 @@ def inscribir(curso_id):
     if not materiales.docente_es_dueno(curso_id, g.usuario["id"]):
         return ("Curso no encontrado.", 404)
     try:
-        svc.inscribir(
+        fila = svc.inscribir(
             curso_id,
             request.form.get("email", ""),
             request.form.get("nombre", ""),
@@ -192,7 +227,47 @@ def inscribir(curso_id):
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("panel.curso", curso_id=curso_id))
-    flash("Estudiante inscrito. Puedes actualizar sus necesidades DUA cuando las identifiques.", "ok")
+    except Exception as exc:
+        flash(f"No se pudo inscribir al estudiante. Detalle: {exc}", "error")
+        return redirect(url_for("panel.curso", curso_id=curso_id))
+    if fila.get("clave_temporal"):
+        # Se renderiza en vez de redirigir: la clave no viaja en la cookie de flash.
+        flash("Cuenta creada e inscrita. Entrega estos datos al estudiante.", "ok")
+        return _pagina_curso(curso_id, credencial={"email": fila["email"], "clave": fila["clave_temporal"]})
+    if fila.get("ya_inscrito"):
+        flash("Ese estudiante ya estaba inscrito en este curso.", "ok")
+    else:
+        flash("Estudiante inscrito. Ya tenía cuenta: entra con su contraseña de siempre.", "ok")
+    return redirect(url_for("panel.curso", curso_id=curso_id))
+
+
+@bp.post("/cursos/<uuid:curso_id>/inscripciones/<uuid:inscripcion_id>/clave")
+@requiere_pagina("docente")
+def restablecer_clave(curso_id, inscripcion_id):
+    curso_id = str(curso_id)
+    if not materiales.docente_es_dueno(curso_id, g.usuario["id"]):
+        return ("Curso no encontrado.", 404)
+    insc = svc.inscripcion_de_curso(str(inscripcion_id), curso_id)
+    if insc is None:
+        return ("Inscripción no encontrada.", 404)
+    try:
+        clave = cuentas.restablecer_clave(insc["estudiante_id"])
+    except Exception as exc:
+        flash(f"No se pudo restablecer la contraseña: {exc}", "error")
+        return redirect(url_for("panel.curso", curso_id=curso_id))
+    perfil = svc.perfil_basico(insc["estudiante_id"])
+    flash("Contraseña restablecida. El estudiante deberá cambiarla al entrar.", "ok")
+    return _pagina_curso(curso_id, credencial={"email": perfil.get("email") or "", "clave": clave})
+
+
+@bp.post("/cursos/<uuid:curso_id>/inscripciones/<uuid:inscripcion_id>/eliminar")
+@requiere_pagina("docente")
+def desinscribir(curso_id, inscripcion_id):
+    curso_id = str(curso_id)
+    if not materiales.docente_es_dueno(curso_id, g.usuario["id"]):
+        return ("Curso no encontrado.", 404)
+    svc.desinscribir(str(inscripcion_id), curso_id)
+    flash("Estudiante quitado del curso. Su cuenta sigue activa.", "ok")
     return redirect(url_for("panel.curso", curso_id=curso_id))
 
 
@@ -229,6 +304,38 @@ def sesion(sesion_id):
         url_mediacion=url_for("panel.mediacion_json", sesion_id=sesion["id"]),
         rol_mediacion="docente",
     )
+
+
+@bp.post("/sesiones/<uuid:sesion_id>/editar")
+@requiere_pagina("docente")
+def editar_sesion(sesion_id):
+    sesion = materiales.docente_es_dueno_de_sesion(str(sesion_id), g.usuario["id"])
+    if sesion is None:
+        return ("Sesión no encontrada.", 404)
+    try:
+        fila = svc.editar_sesion(sesion, request.form.get("titulo", ""), request.form.get("texto", ""))
+    except ValueError as exc:
+        flash(str(exc), "error")
+    else:
+        if fila.get("texto_cambio"):
+            flash("Sesión actualizada. Como cambió el texto, vuelve a generar los formatos DUA.", "ok")
+        else:
+            flash("Sesión actualizada.", "ok")
+    return redirect(url_for("panel.sesion", sesion_id=sesion["id"]))
+
+
+@bp.post("/sesiones/<uuid:sesion_id>/eliminar")
+@requiere_pagina("docente")
+def eliminar_sesion(sesion_id):
+    sesion = materiales.docente_es_dueno_de_sesion(str(sesion_id), g.usuario["id"])
+    if sesion is None:
+        return ("Sesión no encontrada.", 404)
+    if request.form.get("confirmar") != "si":
+        flash("Marca la casilla de confirmación para eliminar la sesión.", "error")
+        return redirect(url_for("panel.sesion", sesion_id=sesion["id"]))
+    svc.eliminar_sesion(sesion)
+    flash(f"Sesión «{sesion['titulo']}» eliminada.", "ok")
+    return redirect(url_for("panel.curso", curso_id=sesion["curso_id"]))
 
 
 @bp.post("/sesiones/<uuid:sesion_id>/dua_traducir")

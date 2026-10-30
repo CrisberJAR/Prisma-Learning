@@ -5,6 +5,7 @@ En Windows, el HTTP/2 de httpx dispara WinError 10035 si varios hilos
 Por eso: HTTP/1.1 y un cliente por hilo.
 """
 import threading
+from contextlib import contextmanager
 
 import httpx
 from supabase import Client, ClientOptions, create_client
@@ -53,6 +54,25 @@ def invalidar_clientes() -> None:
     """Tira las conexiones del hilo actual (tras un corte de red)."""
     for attr in ("anon", "service"):
         setattr(_tls, attr, None)
+
+
+@contextmanager
+def cliente_aislado():
+    """Cliente anon de un solo uso para login, refresh o verificar una contraseña.
+
+    sign_in_with_password guarda la sesión dentro del cliente; si se hiciera con el
+    cliente compartido del hilo, la siguiente petición heredaría la identidad.
+    """
+    http = _httpx_cliente()
+    client = create_client(
+        settings.SUPABASE_URL,
+        settings.SUPABASE_ANON_KEY,
+        options=ClientOptions(httpx_client=http, auto_refresh_token=False, persist_session=False),
+    )
+    try:
+        yield client
+    finally:
+        http.close()
 
 
 def user_client(access_token: str) -> Client:

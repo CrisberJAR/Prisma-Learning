@@ -37,3 +37,14 @@ def signed_url(ruta: str, ttl: int | None = None) -> str:
 def download_bytes(ruta: str) -> bytes:
     client = get_service_client()
     return client.storage.from_(settings.STORAGE_BUCKET).download(ruta)
+
+
+def remove(rutas: list[str]) -> None:
+    """Borra archivos del bucket. Un fallo aquí no debe impedir borrar la sesión o el curso."""
+    rutas = [r for r in rutas if r]
+    if not rutas:
+        return
+    try:
+        get_service_client().storage.from_(settings.STORAGE_BUCKET).remove(rutas)
+    except Exception:
+        pass

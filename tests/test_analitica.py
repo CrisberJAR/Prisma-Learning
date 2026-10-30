@@ -162,7 +162,7 @@ def test_interacciones_registra_beacon(monkeypatch):
 def test_analitica_docente(monkeypatch):
     monkeypatch.setattr("services.auth.usuario_actual", lambda: _con_g(DOCENTE))
     monkeypatch.setattr(materiales, "docente_es_dueno", lambda cid, did: True)
-    monkeypatch.setattr(svc, "listar_cursos", lambda did: [{"id": CID, "nombre_curso": "Biología", "descripcion": ""}])
+    monkeypatch.setattr(svc, "obtener_curso", lambda cid, did: {"id": CID, "nombre_curso": "Biología", "descripcion": ""})
     monkeypatch.setattr(
         analitica,
         "resumen_curso",

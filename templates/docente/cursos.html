@@ -28,10 +28,18 @@
     <p><button class="btn p" type="submit">Crear</button></p>
   </form>
 </section>
+{% if cursos or q %}
+<form class="buscador" method="get" action="{{ url_for('panel.cursos') }}" role="search">
+  <label for="buscar-cursos" class="sr-only">Buscar cursos</label>
+  <input id="buscar-cursos" name="q" type="search" value="{{ q }}" placeholder="Buscar curso por nombre, descripción o nivel" data-filtro="#lista-cursos" data-filtro-estado="#estado-cursos" autocomplete="off">
+  <noscript><button class="btn" type="submit">Buscar</button></noscript>
+  <span id="estado-cursos" role="status" aria-live="polite"></span>
+</form>
+{% endif %}
 {% if cursos %}
-<div class="tarjetas">
+<div class="tarjetas" id="lista-cursos">
   {% for c in cursos %}
-    <a class="tarj glass" href="{{ url_for('panel.curso', curso_id=c.id) }}">
+    <a class="tarj glass" href="{{ url_for('panel.curso', curso_id=c.id) }}" data-buscar="{{ c.nombre_curso }} {{ c.descripcion or '' }} {{ c.nivel_educativo_etiqueta or '' }}">
       <div class="ph"></div>
       <h3>{{ c.nombre_curso }}</h3>
       <p>{{ c.descripcion or "Sin descripción" }}</p>
@@ -41,6 +49,12 @@
     </a>
   {% endfor %}
 </div>
+<p class="empty glass caja" data-filtro-vacio="#lista-cursos" hidden>Ningún curso coincide con la búsqueda.</p>
+{% elif q %}
+<div class="empty glass caja">
+  <b>Sin resultados</b>
+  Ningún curso coincide con «{{ q }}». <a href="{{ url_for('panel.cursos') }}">Ver todos</a>
+</div>
 {% else %}
 <div class="empty glass caja">
   <div class="o"></div>
@@ -49,3 +63,4 @@
 </div>
 {% endif %}
 {% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/filtro.js') }}" defer></script>{% endblock %}

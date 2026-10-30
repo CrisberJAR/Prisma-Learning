@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from flask import Flask, jsonify, redirect, url_for
 
 import httpx
@@ -15,6 +17,9 @@ def create_app(con_worker: bool | None = None):
     app = Flask(__name__)
     app.config["SECRET_KEY"] = settings.FLASK_SECRET_KEY or "dev-only-secret"
     app.config["MAX_CONTENT_LENGTH"] = settings.MAX_UPLOAD_MB * 1024 * 1024
+    # Lax: el navegador no manda la cookie de sesión en POST que vienen de otros sitios (CSRF).
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(panel_bp)
@@ -29,11 +34,27 @@ def create_app(con_worker: bool | None = None):
 
         usuario_actual()
 
+    @app.before_request
+    def proteger_csrf():
+        """Segunda capa contra CSRF: un POST de navegador debe venir de este mismo sitio."""
+        from flask import request
+
+        if request.method in ("GET", "HEAD", "OPTIONS"):
+            return None
+        origen = request.headers.get("Origin") or request.headers.get("Referer")
+        if not origen:
+            return None  # Clientes sin navegador (scripts con Bearer) y tests.
+        if urlparse(origen).netloc != request.host:
+            return jsonify({"error": "Petición de otro sitio bloqueada"}), 403
+        return None
+
     @app.after_request
     def cabeceras_seguridad(resp):
         resp.headers["X-Content-Type-Options"] = "nosniff"
         resp.headers["X-Frame-Options"] = "DENY"
-        resp.headers["Referrer-Policy"] = "no-referrer"
+        # same-origin (no no-referrer): con no-referrer los formularios propios envían
+        # "Origin: null" y la comprobación CSRF no podría distinguirlos de un ataque.
+        resp.headers["Referrer-Policy"] = "same-origin"
         resp.headers["Permissions-Policy"] = "camera=(), geolocation=(), microphone=(self)"
         return resp
 

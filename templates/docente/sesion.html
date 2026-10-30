@@ -21,6 +21,31 @@
       </form>
     {% endif %}
   </div>
+  <details class="gestion">
+    <summary>Editar sesión</summary>
+    <form method="post" action="{{ url_for('panel.editar_sesion', sesion_id=sesion.id) }}">
+      <p>
+        <label for="ed-titulo">Título de la sesión</label>
+        <input id="ed-titulo" name="titulo" type="text" required maxlength="200" value="{{ sesion.titulo }}">
+      </p>
+      {% if sesion.estado != 'procesando' %}
+      <p>
+        <label for="ed-texto">Texto de la clase</label>
+        <textarea id="ed-texto" name="texto" rows="12" aria-describedby="ed-texto-ayuda">{{ sesion.texto_extraido or '' }}</textarea>
+        <small id="ed-texto-ayuda" class="mut">Si cambias el texto, se borran los formatos DUA generados y se vuelven a crear la imagen y la mediación.{% if sesion.estado == 'publicado' %} Los estudiantes verán el texto nuevo de inmediato.{% endif %}</small>
+      </p>
+      {% endif %}
+      <p><button class="btn p" type="submit">Guardar cambios</button></p>
+    </form>
+  </details>
+  <details class="gestion peligro">
+    <summary>Eliminar sesión</summary>
+    <form method="post" action="{{ url_for('panel.eliminar_sesion', sesion_id=sesion.id) }}">
+      <p class="aviso err">Se borrarán la sesión, sus formatos DUA, las dudas del tutor y el progreso de los estudiantes. No se puede deshacer.</p>
+      <p><label><input type="checkbox" name="confirmar" value="si" required> Entiendo que esta acción es definitiva</label></p>
+      <p><button class="btn d" type="submit">Eliminar sesión</button></p>
+    </form>
+  </details>
 </section>
 
 <div class="tabs glass" role="tablist">

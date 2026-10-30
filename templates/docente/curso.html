@@ -11,7 +11,51 @@
     </div>
     <a class="btn" href="{{ url_for('panel.analitica_curso', curso_id=curso.id) }}">Analítica del curso</a>
   </div>
+  <details class="gestion">
+    <summary>Editar curso</summary>
+    <form method="post" action="{{ url_for('panel.editar_curso', curso_id=curso.id) }}">
+      <div class="g2">
+        <p>
+          <label for="ed-nombre">Nombre del curso</label>
+          <input id="ed-nombre" name="nombre" type="text" required maxlength="200" value="{{ curso.nombre_curso }}">
+        </p>
+        <p>
+          <label for="ed-nivel">Nivel educativo (CINE / UNESCO)</label>
+          <select id="ed-nivel" name="nivel_educativo" required>
+            {% for n in niveles_cine %}
+            <option value="{{ n.codigo }}" {% if n.codigo == curso.nivel_educativo %}selected{% endif %}>{{ n.etiqueta }}</option>
+            {% endfor %}
+          </select>
+        </p>
+      </div>
+      <p>
+        <label for="ed-descripcion">Descripción (opcional)</label>
+        <textarea id="ed-descripcion" name="descripcion" rows="3">{{ curso.descripcion or '' }}</textarea>
+      </p>
+      <p><button class="btn p" type="submit">Guardar cambios</button></p>
+    </form>
+  </details>
+  <details class="gestion peligro">
+    <summary>Eliminar curso</summary>
+    <form method="post" action="{{ url_for('panel.eliminar_curso', curso_id=curso.id) }}">
+      <p class="aviso err">Se borrarán sus {{ curso.n_sesiones or 0 }} sesiones, los formatos generados, las dudas del tutor y las {{ curso.n_estudiantes or 0 }} inscripciones. Las cuentas de los estudiantes no se borran. No se puede deshacer.</p>
+      <p>
+        <label for="confirmacion">Escribe el nombre del curso para confirmar: <b>{{ curso.nombre_curso }}</b></label>
+        <input id="confirmacion" name="confirmacion" type="text" required autocomplete="off">
+      </p>
+      <p><button class="btn d" type="submit">Eliminar definitivamente</button></p>
+    </form>
+  </details>
 </section>
+
+{% if credencial %}
+<section class="glass caja credencial" aria-labelledby="credencial-titulo" tabindex="-1" id="credencial">
+  <h2 id="credencial-titulo">Datos de acceso del estudiante</h2>
+  <p>Correo: <code>{{ credencial.email }}</code></p>
+  <p>Contraseña temporal: <code>{{ credencial.clave }}</code></p>
+  <p class="mut">Cópialos ahora: por seguridad no se vuelven a mostrar. Al entrar por primera vez, el sistema le pedirá crear su propia contraseña. Si la pierde, usa «Restablecer contraseña» en la pestaña Estudiantes.</p>
+</section>
+{% endif %}
 
 <div class="tabs glass" role="tablist">
   <button type="button" role="tab" id="tab-material" aria-controls="panel-material" aria-selected="true">Material</button>
@@ -150,9 +194,14 @@
 <section class="glass caja" id="panel-sesiones" role="tabpanel" aria-labelledby="tab-sesiones">
   <h2 id="sesiones">Sesiones</h2>
   {% if sesiones %}
-  <div class="tarjetas">
+  <div class="buscador" role="search">
+    <label for="buscar-sesiones" class="sr-only">Buscar sesiones</label>
+    <input id="buscar-sesiones" type="search" placeholder="Buscar sesión por título, estado o contenido" data-filtro="#lista-sesiones" data-filtro-estado="#estado-sesiones" autocomplete="off">
+    <span id="estado-sesiones" role="status" aria-live="polite"></span>
+  </div>
+  <div class="tarjetas" id="lista-sesiones">
     {% for s in sesiones %}
-      <a class="tarj glass" href="{{ url_for('panel.sesion', sesion_id=s.id) }}">
+      <a class="tarj glass" href="{{ url_for('panel.sesion', sesion_id=s.id) }}" data-buscar="{{ s.titulo }} {{ s.estado }} {{ (s.texto_extraido or '')[:400] }}">
         <div class="ph"></div>
         <h3>{{ s.titulo }}</h3>
         {% set chip_estado = 'ok' if s.estado == 'publicado' else ('w' if s.estado in ['revision', 'procesando'] else '') %}
@@ -166,6 +215,7 @@
       </a>
     {% endfor %}
   </div>
+  <p class="empty" data-filtro-vacio="#lista-sesiones" hidden>Ninguna sesión coincide con la búsqueda.</p>
   {% else %}
   <div class="empty">
     <div class="o"></div>
@@ -180,15 +230,34 @@
   <div class="split">
     <div>
       {% if inscripciones %}
+        <div class="buscador" role="search">
+          <label for="buscar-estudiantes" class="sr-only">Buscar estudiantes</label>
+          <input id="buscar-estudiantes" type="search" placeholder="Buscar estudiante por nombre o correo" data-filtro="#lista-estudiantes" data-filtro-estado="#estado-estudiantes" autocomplete="off">
+          <span id="estado-estudiantes" role="status" aria-live="polite"></span>
+        </div>
+        <div id="lista-estudiantes">
         {% for i in inscripciones %}
-          <form method="post" action="{{ url_for('panel.preferencias', curso_id=curso.id, inscripcion_id=i.id) }}" class="glass caja">
-            <h3>{{ i.nombre }}</h3>
-            {% with nombre_campo='preferencias', seleccionadas=i.preferencias or [], id_idioma='idioma-' ~ i.id, idioma_actual=i.idioma_preferido or 'es', leyenda='Necesidades DUA y adaptaciones de aprendizaje' %}
-            {% include "_dua_necesidades.html" %}
-            {% endwith %}
-            <p><button class="btn p" type="submit">Actualizar necesidades DUA</button></p>
-          </form>
+          <div class="glass caja" data-buscar="{{ i.nombre }} {{ i.email }}">
+            <form method="post" action="{{ url_for('panel.preferencias', curso_id=curso.id, inscripcion_id=i.id) }}">
+              <h3>{{ i.nombre }}</h3>
+              {% if i.email %}<p class="mut">{{ i.email }}{% if i.debe_cambiar_clave %} · <span class="chip w">aún con contraseña temporal</span>{% endif %}</p>{% endif %}
+              {% with nombre_campo='preferencias', seleccionadas=i.preferencias or [], id_idioma='idioma-' ~ i.id, idioma_actual=i.idioma_preferido or 'es', leyenda='Necesidades DUA y adaptaciones de aprendizaje' %}
+              {% include "_dua_necesidades.html" %}
+              {% endwith %}
+              <p><button class="btn p" type="submit">Actualizar necesidades DUA</button></p>
+            </form>
+            <div class="est-acciones">
+              <form method="post" action="{{ url_for('panel.restablecer_clave', curso_id=curso.id, inscripcion_id=i.id) }}">
+                <button class="btn" type="submit" aria-label="Restablecer contraseña de {{ i.nombre }}">Restablecer contraseña</button>
+              </form>
+              <form method="post" action="{{ url_for('panel.desinscribir', curso_id=curso.id, inscripcion_id=i.id) }}" data-confirmar="¿Quitar a {{ i.nombre }} de este curso? Su cuenta no se borra.">
+                <button class="btn d" type="submit" aria-label="Quitar a {{ i.nombre }} del curso">Quitar del curso</button>
+              </form>
+            </div>
+          </div>
         {% endfor %}
+        </div>
+        <p class="empty" data-filtro-vacio="#lista-estudiantes" hidden>Ningún estudiante coincide con la búsqueda.</p>
       {% else %}
         <div class="empty glass caja">
           <div class="o"></div>
@@ -211,9 +280,11 @@
         {% with nombre_campo='preferencias', seleccionadas=[], id_idioma='idioma-nuevo', idioma_actual='es', leyenda='Necesidades DUA y adaptaciones de aprendizaje (opcional)' %}
         {% include "_dua_necesidades.html" %}
         {% endwith %}
+        <p class="mut">Si el correo no tiene cuenta, se crea con una contraseña temporal que verás una sola vez.</p>
         <p><button class="btn p" type="submit">Inscribir</button></p>
       </form>
     </aside>
   </div>
 </section>
 {% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/filtro.js') }}" defer></script>{% endblock %}
