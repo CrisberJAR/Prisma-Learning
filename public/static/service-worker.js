@@ -1,4 +1,4 @@
-const CACHE = "prisma-v3";
+const CACHE = "prisma-v4";
 const PRECACHE = [
   "/offline",
   "/static/css/app.css",

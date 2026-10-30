@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Prisma">
-  <rect width="64" height="64" rx="16" fill="#1f5bff"/>
-  <polygon points="32,10 56,54 8,54" fill="#fff"/>
+  <rect width="64" height="64" rx="18" fill="#2563eb"/>
+  <rect x="16" y="32" width="8" height="18" rx="4" fill="#fff"/>
+  <rect x="28" y="20" width="8" height="30" rx="4" fill="#fff"/>
+  <rect x="40" y="26" width="8" height="24" rx="4" fill="#fff"/>
 </svg>

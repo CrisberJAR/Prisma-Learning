@@ -22,11 +22,10 @@ def test_css_objetivos_tactiles_y_foco():
     assert ":focus-visible" in css
     assert "scroll-margin-top" in css
     assert "prefers-reduced-motion" in css
-    # Sistema de diseño: índigo de marca, tipografías y superficies translúcidas.
-    assert "--pri:#4f46e5" in css
+    # Sistema de diseño: azul de marca, tipografía y superficies translúcidas.
+    assert "--pri:#2563eb" in css
     assert "backdrop-filter:blur(" in css
     assert "Inter" in css
-    assert "Plus Jakarta Sans" in css
     # Los modos DUA siguen definidos: TDAH sin animaciones, baja visión y alto contraste.
     assert "body.dua-tdah *" in css and "animation:none!important" in css
     assert "body.dua-baja_vision" in css and ".tema-contraste" in css

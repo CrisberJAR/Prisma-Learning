@@ -3,8 +3,8 @@
   "short_name": "Prisma",
   "start_url": "/estudiante/cursos",
   "display": "standalone",
-  "background_color": "#dce8ff",
-  "theme_color": "#1f5bff",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
   "lang": "es",
   "icons": [
     {
