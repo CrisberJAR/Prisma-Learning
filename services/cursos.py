@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 from services import cuentas, dua, storage
 from services.supabase_client import get_service_client
+from services.i18n import _
 
 PREFERENCIAS = list(dua.CODIGOS)
 
@@ -23,7 +24,7 @@ def resolver_nivel(codigo: str) -> tuple[str, str]:
     clave = (codigo or "").strip()
     etiqueta = NIVELES_POR_CODIGO.get(clave)
     if not etiqueta:
-        raise ValueError("Elige un nivel educativo CINE")
+        raise ValueError(_("Elige un nivel educativo CINE"))
     return clave, etiqueta
 
 
@@ -108,7 +109,7 @@ def filtrar(items: list[dict], q: str, *campos: str) -> list[dict]:
 def crear_curso(docente_id: str, nombre: str, descripcion: str = "", nivel_educativo: str = "") -> dict:
     nombre = (nombre or "").strip()
     if not nombre:
-        raise ValueError("El nombre del curso es obligatorio")
+        raise ValueError(_("El nombre del curso es obligatorio"))
     codigo, etiqueta = resolver_nivel(nivel_educativo)
     fila = {
         "docente_id": docente_id,
@@ -122,7 +123,7 @@ def crear_curso(docente_id: str, nombre: str, descripcion: str = "", nivel_educa
     except Exception as exc:
         if "nivel_educativo" in str(exc):
             raise ValueError(
-                "Falta agregar en Supabase las columnas CINE. Ejecuta supabase/003_cine.sql en el editor SQL."
+                _("Falta agregar en Supabase las columnas CINE. Ejecuta supabase/003_cine.sql en el editor SQL.")
             ) from exc
         raise
 
@@ -130,7 +131,7 @@ def crear_curso(docente_id: str, nombre: str, descripcion: str = "", nivel_educa
 def editar_curso(curso_id: str, docente_id: str, nombre: str, descripcion: str = "", nivel_educativo: str = "") -> dict:
     nombre = (nombre or "").strip()
     if not nombre:
-        raise ValueError("El nombre del curso es obligatorio")
+        raise ValueError(_("El nombre del curso es obligatorio"))
     codigo, etiqueta = resolver_nivel(nivel_educativo)
     filas = (
         get_service_client()
@@ -149,7 +150,7 @@ def editar_curso(curso_id: str, docente_id: str, nombre: str, descripcion: str =
         .data
     )
     if not filas:
-        raise ValueError("El curso no existe")
+        raise ValueError(_("El curso no existe"))
     return filas[0]
 
 
@@ -160,9 +161,9 @@ def eliminar_curso(curso_id: str, docente_id: str, confirmacion: str) -> None:
     """
     curso = obtener_curso(curso_id, docente_id)
     if curso is None:
-        raise ValueError("El curso no existe")
+        raise ValueError(_("El curso no existe"))
     if (confirmacion or "").strip() != (curso.get("nombre_curso") or "").strip():
-        raise ValueError("Para eliminar, escribe el nombre exacto del curso.")
+        raise ValueError(_("Para eliminar, escribe el nombre exacto del curso."))
     db = get_service_client()
     sesiones = db.table("sesiones_material").select("id, archivo_url").eq("curso_id", curso_id).execute().data or []
     ids = [x["id"] for x in sesiones]
@@ -178,12 +179,12 @@ def editar_sesion(sesion: dict, titulo: str, texto: str) -> dict:
     titulo = (titulo or "").strip()
     texto = (texto or "").strip()
     if not titulo:
-        raise ValueError("El título de la sesión es obligatorio")
+        raise ValueError(_("El título de la sesión es obligatorio"))
     cambios: dict = {"titulo": titulo[:200]}
     texto_cambio = bool(texto) and texto != (sesion.get("texto_extraido") or "").strip()
     if texto_cambio:
         if sesion.get("estado") == "procesando":
-            raise ValueError("Espera a que termine la extracción antes de editar el texto")
+            raise ValueError(_("Espera a que termine la extracción antes de editar el texto"))
         cambios["texto_extraido"] = texto
         # Hash nuevo: imagen, mediación y formatos se cachean por hash del material.
         cambios["contenido_hash"] = hashlib.sha256(texto.encode("utf-8")).hexdigest()
@@ -262,9 +263,9 @@ def publicar_sesion(sesion_id: str) -> dict:
     db = get_service_client()
     sesion = db.table("sesiones_material").select("*").eq("id", sesion_id).limit(1).execute().data
     if not sesion:
-        raise ValueError("La sesión no existe")
+        raise ValueError(_("La sesión no existe"))
     if sesion[0].get("estado") not in ("revision", "publicado"):
-        raise ValueError("Solo se puede publicar una sesión en revisión")
+        raise ValueError(_("Solo se puede publicar una sesión en revisión"))
     return db.table("sesiones_material").update({"estado": "publicado"}).eq("id", sesion_id).execute().data[0]
 
 
@@ -280,7 +281,7 @@ def guardar_edicion(sesion_id: str, formato: str, contenido: dict) -> dict:
         .data
     )
     if not existente:
-        raise ValueError("Ese formato aún no está generado")
+        raise ValueError(_("Ese formato aún no está generado"))
     version = (existente[0].get("version") or 1) + 1
     return (
         db.table("paquetes_formato")
@@ -295,9 +296,9 @@ def reintentar_job(job_id: str) -> dict:
     db = get_service_client()
     job = db.table("jobs").select("*").eq("id", job_id).limit(1).execute().data
     if not job:
-        raise ValueError("Job no encontrado")
+        raise ValueError(_("Job no encontrado"))
     if job[0]["estado"] != "failed":
-        raise ValueError("Solo se reintentan jobs fallidos")
+        raise ValueError(_("Solo se reintentan jobs fallidos"))
     return db.table("jobs").update({"estado": "queued", "error": None, "progreso": 0}).eq("id", job_id).execute().data[0]
 
 
@@ -346,7 +347,7 @@ def inscribir(
     """
     email = (email or "").strip().lower()
     if "@" not in email or "." not in email.split("@")[-1]:
-        raise ValueError("Indica un correo válido")
+        raise ValueError(_("Indica un correo válido"))
     nombre = (nombre or "").strip() or email.split("@")[0]
     db = get_service_client()
     clave = None
@@ -358,7 +359,7 @@ def inscribir(
             clave = None
     perfil = db.table("perfiles").select("id, rol").eq("id", user.id).limit(1).execute().data
     if perfil and perfil[0]["rol"] != "estudiante":
-        raise ValueError("Ese correo pertenece a una cuenta de docente; no se puede inscribir como estudiante.")
+        raise ValueError(_("Ese correo pertenece a una cuenta de docente; no se puede inscribir como estudiante."))
     if not perfil:
         _guardar_perfil(user.id, email, nombre, debe_cambiar=clave is not None)
     existente = (
@@ -408,10 +409,9 @@ def _crear_estudiante(email: str, nombre: str, clave: str):
                 return SimpleNamespace(id=user.id, email=email, ya_existia=True)
         if "database error" in texto:
             raise ValueError(
-                "Supabase no pudo crear la cuenta (trigger de perfiles). "
-                "Ejecuta supabase/002_rls_fix.sql y supabase/004_fase1.sql en el editor SQL."
+                _("Supabase no pudo crear la cuenta (trigger de perfiles). Ejecuta supabase/002_rls_fix.sql y supabase/004_fase1.sql en el editor SQL.")
             ) from exc
-        raise ValueError(f"No se pudo crear la cuenta del estudiante: {exc}") from exc
+        raise ValueError(_("No se pudo crear la cuenta del estudiante: {detalle}", detalle=exc)) from exc
     user = creado.user
     # No depender solo del trigger: si falta o falló, el perfil se crea aquí.
     _guardar_perfil(user.id, email, nombre, debe_cambiar=True)

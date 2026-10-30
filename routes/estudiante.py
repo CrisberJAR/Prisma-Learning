@@ -7,6 +7,7 @@ from services import analitica, chat_service, dua, estudiante as svc, imagen_edu
 from services import cursos as cursos_svc
 from services.auth import requiere_pagina, requiere_rol
 from services.package_builder import FORMATOS_MVP, NOMBRES_UI
+from services.i18n import _
 
 bp = Blueprint("estudiante", __name__, url_prefix="/estudiante")
 
@@ -31,8 +32,7 @@ def mochila():
 def preferencias(curso_id):
     """Los ajustes del curso los define el docente; el estudiante solo puede cambiar la vista por sesión."""
     flash(
-        "Los ajustes DUA de tu curso los configura tu docente. "
-        "Entra en una sesión publicada para probar otras formas de ver solo esa clase.",
+        _("Los ajustes DUA de tu curso los configura tu docente. Entra en una sesión publicada para probar otras formas de ver solo esa clase."),
         "err",
     )
     return redirect(url_for("estudiante.mochila"))
@@ -43,7 +43,7 @@ def preferencias(curso_id):
 def sesion(sesion_id):
     visto = svc.sesion_visible(str(sesion_id), g.usuario["id"])
     if visto is None:
-        return ("Esa sesión no está publicada o no estás inscrito.", 404)
+        return (_("Esa sesión no está publicada o no estás inscrito."), 404)
     sesion, insc = visto
     paquetes = svc.ordenar_formatos(cursos_svc.paquetes_de_sesion(sesion["id"]), insc.get("preferencias") or [])
     clave = f"fmt_{sesion['id']}"
@@ -82,7 +82,7 @@ def sesion(sesion_id):
 def vista(sesion_id):
     visto = svc.sesion_visible(str(sesion_id), g.usuario["id"])
     if visto is None:
-        return ("Esa sesión no está publicada o no estás inscrito.", 404)
+        return (_("Esa sesión no está publicada o no estás inscrito."), 404)
     sid = visto[0]["id"]
     session[f"fmt_{sid}"] = dua.normalizar_preferencias(request.form.getlist("activos"))
     if request.form.get("idioma"):
@@ -95,7 +95,7 @@ def vista(sesion_id):
 def dua_traducir(sesion_id):
     visto = svc.sesion_visible(str(sesion_id), g.usuario["id"])
     if visto is None:
-        return jsonify({"error": "Sesión no disponible"}), 404
+        return jsonify({"error": _("Sesión no disponible")}), 404
     cuerpo = request.get_json(silent=True) or {}
     out = dua.adaptar_a_lengua(visto[0].get("texto_extraido") or "", cuerpo.get("idioma") or "")
     return jsonify(out)
@@ -106,7 +106,7 @@ def dua_traducir(sesion_id):
 def imagen_educativa_json(sesion_id):
     visto = svc.sesion_visible(str(sesion_id), g.usuario["id"])
     if visto is None:
-        return jsonify({"error": "Sesión no disponible"}), 404
+        return jsonify({"error": _("Sesión no disponible")}), 404
     try:
         return jsonify(imagen_educativa.para_sesion(visto[0]))
     except Exception as exc:
@@ -118,7 +118,7 @@ def imagen_educativa_json(sesion_id):
 def mediacion_json(sesion_id):
     visto = svc.sesion_visible(str(sesion_id), g.usuario["id"])
     if visto is None:
-        return jsonify({"error": "Sesión no disponible"}), 404
+        return jsonify({"error": _("Sesión no disponible")}), 404
     try:
         return jsonify(mediacion.para_sesion(visto[0]))
     except Exception as exc:
@@ -147,7 +147,7 @@ def interacciones():
     sesion_id = str(cuerpo.get("sesion_id") or "")
     visto = svc.sesion_visible(sesion_id, g.usuario["id"])
     if visto is None:
-        return jsonify({"error": "Sesión no disponible"}), 404
+        return jsonify({"error": _("Sesión no disponible")}), 404
     try:
         rate_limit.comprobar(f"inter:{g.usuario['id']}", settings.RATE_INTERACCION_POR_MINUTO)
     except rate_limit.DemasiadoRapido as exc:
@@ -169,10 +169,10 @@ def interacciones():
 def borrar_chat(sesion_id):
     visto = svc.sesion_visible(str(sesion_id), g.usuario["id"])
     if visto is None:
-        return ("Esa sesión no está publicada o no estás inscrito.", 404)
+        return (_("Esa sesión no está publicada o no estás inscrito."), 404)
     if request.form.get("confirmar") != "1":
-        flash("Marca la casilla para confirmar el borrado.", "error")
+        flash(_("Marca la casilla para confirmar el borrado."), "error")
         return redirect(url_for("estudiante.sesion", sesion_id=visto[0]["id"]))
     chat_service.borrar_mi_conversacion(visto[0]["id"], g.usuario["id"])
-    flash("Se borró tu conversación de esta sesión.", "ok")
+    flash(_("Se borró tu conversación de esta sesión."), "ok")
     return redirect(url_for("estudiante.sesion", sesion_id=visto[0]["id"]))

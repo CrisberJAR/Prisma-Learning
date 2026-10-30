@@ -1,65 +1,66 @@
 {% extends "base.html" %}
-{% block title %}Cursos · Prisma{% endblock %}
+{% block title %}{{ _("Cursos") }} · Prisma{% endblock %}
 {% block contenido %}
 <section class="glass caja">
-  <h1>Tus cursos</h1>
-  <p class="mut">Crea un curso y sube materiales. Cada formato DUA se revisa antes de publicar.</p>
+  <h1>{{ _("Tus cursos") }}</h1>
+  <p class="mut">{{ _("Crea un curso y sube materiales. Cada formato DUA se revisa antes de publicar.") }}</p>
   <form method="post" action="{{ url_for('panel.crear_curso') }}">
-    <h2>Crear curso</h2>
+    <h2>{{ _("Crear curso") }}</h2>
     <div class="g2">
       <p>
-        <label for="nombre">Nombre del curso</label>
+        <label for="nombre">{{ _("Nombre del curso") }}</label>
         <input id="nombre" name="nombre" type="text" required maxlength="200">
       </p>
       <p>
-        <label for="nivel_educativo">Nivel educativo (CINE / UNESCO)</label>
+        <label for="nivel_educativo">{{ _("Nivel educativo (CINE / UNESCO)") }}</label>
         <select id="nivel_educativo" name="nivel_educativo" required>
-          <option value="" disabled selected>Elige el nivel</option>
+          <option value="" disabled selected>{{ _("Elige el nivel") }}</option>
           {% for n in niveles_cine %}
-          <option value="{{ n.codigo }}">{{ n.etiqueta }}</option>
+          <option value="{{ n.codigo }}">{{ _(n.etiqueta) }}</option>
           {% endfor %}
         </select>
       </p>
     </div>
     <p>
-      <label for="descripcion">Descripción (opcional)</label>
+      <label for="descripcion">{{ _("Descripción (opcional)") }}</label>
       <textarea id="descripcion" name="descripcion" rows="3"></textarea>
     </p>
-    <p><button class="btn p" type="submit">Crear</button></p>
+    <p><button class="btn p" type="submit">{{ _("Crear") }}</button></p>
   </form>
 </section>
 {% if cursos or q %}
 <form class="buscador" method="get" action="{{ url_for('panel.cursos') }}" role="search">
-  <label for="buscar-cursos" class="sr-only">Buscar cursos</label>
-  <input id="buscar-cursos" name="q" type="search" value="{{ q }}" placeholder="Buscar curso por nombre, descripción o nivel" data-filtro="#lista-cursos" data-filtro-estado="#estado-cursos" autocomplete="off">
-  <noscript><button class="btn" type="submit">Buscar</button></noscript>
+  <label for="buscar-cursos" class="sr-only">{{ _("Buscar cursos") }}</label>
+  <input id="buscar-cursos" name="q" type="search" value="{{ q }}" placeholder="{{ _('Buscar curso por nombre, descripción o nivel') }}" data-filtro="#lista-cursos" data-filtro-estado="#estado-cursos" autocomplete="off">
+  <noscript><button class="btn" type="submit">{{ _("Buscar") }}</button></noscript>
   <span id="estado-cursos" role="status" aria-live="polite"></span>
 </form>
 {% endif %}
 {% if cursos %}
 <div class="tarjetas" id="lista-cursos">
   {% for c in cursos %}
-    <a class="tarj glass" href="{{ url_for('panel.curso', curso_id=c.id) }}" data-buscar="{{ c.nombre_curso }} {{ c.descripcion or '' }} {{ c.nivel_educativo_etiqueta or '' }}">
+    {% set nivel = _(c.nivel_educativo_etiqueta) if c.nivel_educativo_etiqueta else '' %}
+    <a class="tarj glass" href="{{ url_for('panel.curso', curso_id=c.id) }}" data-buscar="{{ c.nombre_curso }} {{ c.descripcion or '' }} {{ nivel }}">
       <div class="ph"></div>
       <h3>{{ c.nombre_curso }}</h3>
-      <p>{{ c.descripcion or "Sin descripción" }}</p>
-      {% if c.nivel_educativo_etiqueta %}<span class="chip">{{ c.nivel_educativo_etiqueta }}</span>{% endif %}
-      <span class="chip">{{ c.n_sesiones or 0 }} sesiones</span>
-      <span class="chip">{{ c.n_estudiantes or 0 }} estudiantes</span>
+      <p>{{ c.descripcion or _("Sin descripción") }}</p>
+      {% if nivel %}<span class="chip">{{ nivel }}</span>{% endif %}
+      <span class="chip">{{ _("{n} sesiones", n=c.n_sesiones or 0) }}</span>
+      <span class="chip">{{ _("{n} estudiantes", n=c.n_estudiantes or 0) }}</span>
     </a>
   {% endfor %}
 </div>
-<p class="empty glass caja" data-filtro-vacio="#lista-cursos" hidden>Ningún curso coincide con la búsqueda.</p>
+<p class="empty glass caja" data-filtro-vacio="#lista-cursos" hidden>{{ _("Ningún curso coincide con la búsqueda.") }}</p>
 {% elif q %}
 <div class="empty glass caja">
-  <b>Sin resultados</b>
-  Ningún curso coincide con «{{ q }}». <a href="{{ url_for('panel.cursos') }}">Ver todos</a>
+  <b>{{ _("Sin resultados") }}</b>
+  {{ _("Ningún curso coincide con «{q}».", q=q) }} <a href="{{ url_for('panel.cursos') }}">{{ _("Ver todos") }}</a>
 </div>
 {% else %}
 <div class="empty glass caja">
   <div class="o"></div>
-  <b>Aún no hay cursos</b>
-  Crea el primero con el formulario de arriba.
+  <b>{{ _("Aún no hay cursos") }}</b>
+  {{ _("Crea el primero con el formulario de arriba.") }}
 </div>
 {% endif %}
 {% endblock %}

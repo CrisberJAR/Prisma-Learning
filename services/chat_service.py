@@ -5,6 +5,7 @@ from datetime import date
 from config import settings
 from services import ai_router, cache_ia
 from services.supabase_client import get_service_client
+from services.i18n import _
 
 VERSION_CHAT = "chat-v1"
 MARCA_DUDA = "[Duda para el docente]"
@@ -59,7 +60,7 @@ def cuota_hoy(estudiante_id: str) -> int:
 def _consumir_cuota(estudiante_id: str) -> None:
     usados = cuota_hoy(estudiante_id)
     if usados >= settings.CHAT_LIMITE_DIARIO:
-        raise CuotaAgotadaChat(f"Llegaste al límite diario de {settings.CHAT_LIMITE_DIARIO} mensajes.")
+        raise CuotaAgotadaChat(_("Llegaste al límite diario de {n} mensajes.", n=settings.CHAT_LIMITE_DIARIO))
     db = get_service_client()
     hoy = date.today().isoformat()
     db.table("chat_cuota_diaria").upsert(
@@ -111,7 +112,7 @@ def responder_stream(sesion: dict, estudiante_id: str, pregunta: str, preferenci
     """Itera fragmentos de la respuesta. Consume cuota. Usa caché si la pregunta se repite."""
     pregunta = (pregunta or "").strip()
     if not pregunta:
-        raise ValueError("Escribe una pregunta.")
+        raise ValueError(_("Escribe una pregunta."))
     _consumir_cuota(estudiante_id)
     conv = conversacion(sesion["id"], estudiante_id)
     _guardar_mensaje(conv["id"], "user", pregunta)
@@ -144,7 +145,7 @@ def responder_stream(sesion: dict, estudiante_id: str, pregunta: str, preferenci
 def enviar_duda_docente(sesion_id: str, estudiante_id: str, pregunta: str) -> dict:
     pregunta = (pregunta or "").strip()
     if not pregunta:
-        raise ValueError("No hay pregunta para enviar.")
+        raise ValueError(_("No hay pregunta para enviar."))
     conv = conversacion(sesion_id, estudiante_id)
     contenido = f"{MARCA_DUDA}\n{pregunta}"
     _guardar_mensaje(conv["id"], "user", contenido)

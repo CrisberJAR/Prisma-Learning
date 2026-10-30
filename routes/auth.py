@@ -1,7 +1,8 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for
 
-from services import cuentas, rate_limit
+from services import cuentas, i18n, rate_limit
 from services.auth import usuario_actual
+from services.i18n import _
 
 bp = Blueprint("auth", __name__)
 
@@ -21,26 +22,38 @@ def entrar_post():
     email = (request.form.get("email") or "").strip()
     password = request.form.get("password") or ""
     if not email or not password:
-        flash("Escribe correo y contraseña.", "error")
+        flash(_("Escribe correo y contraseña."), "error")
         return render_template("auth/entrar.html"), 400
     try:
         tokens = cuentas.iniciar_sesion(email, password)
     except Exception:
-        flash("No se pudo iniciar sesión. Revisa el correo y la contraseña.", "error")
+        flash(_("No se pudo iniciar sesión. Revisa el correo y la contraseña."), "error")
         return render_template("auth/entrar.html"), 401
-    session.clear()
+    idioma_elegido = session.get("idioma_ui")
+    _limpiar_sesion()
     session["access_token"] = tokens["access_token"]
     session["refresh_token"] = tokens["refresh_token"]
     session.permanent = True
     usuario = usuario_actual()
     if usuario is None:
-        session.clear()
-        flash("Tu cuenta no tiene perfil. Vuelve a registrarte o avisa a quien administra el sistema.", "error")
+        _limpiar_sesion()
+        flash(_("Tu cuenta no tiene perfil. Vuelve a registrarte o avisa a quien administra el sistema."), "error")
         return render_template("auth/entrar.html"), 403
+    if idioma_elegido and idioma_elegido != usuario.get("idioma_ui"):
+        # Lo que eligió en la pantalla de entrada pasa a ser su preferencia.
+        i18n.guardar_preferencia(usuario["id"], idioma_elegido)
     if usuario.get("debe_cambiar_clave"):
-        flash("Estás usando una contraseña temporal. Crea una propia para continuar.", "ok")
+        flash(_("Estás usando una contraseña temporal. Crea una propia para continuar."), "ok")
         return redirect(url_for("auth.cambiar_clave"))
     return _a_su_panel(usuario)
+
+
+def _limpiar_sesion() -> None:
+    """Cierra la sesión de usuario pero conserva el idioma elegido."""
+    idioma = session.get("idioma_ui")
+    session.clear()
+    if idioma:
+        session["idioma_ui"] = idioma
 
 
 def _a_su_panel(usuario: dict):
@@ -48,15 +61,31 @@ def _a_su_panel(usuario: dict):
         return redirect(url_for("panel.cursos"))
     if usuario["rol"] == "estudiante":
         return redirect(url_for("estudiante.mochila"))
-    session.clear()
-    flash("Este perfil no tiene un panel asignado.", "error")
+    _limpiar_sesion()
+    flash(_("Este perfil no tiene un panel asignado."), "error")
     return render_template("auth/entrar.html"), 403
 
 
 @bp.post("/salir")
 def salir():
-    session.clear()
+    _limpiar_sesion()
     return redirect(url_for("auth.entrar"))
+
+
+@bp.post("/idioma")
+def cambiar_idioma():
+    codigo = i18n.normalizar(request.form.get("idioma"))
+    if codigo:
+        session["idioma_ui"] = codigo
+        g.idioma = codigo
+        usuario = usuario_actual()
+        if usuario:
+            i18n.guardar_preferencia(usuario["id"], codigo)
+    destino = request.form.get("volver") or ""
+    # Solo rutas internas: evita usar el selector como redirección abierta.
+    if not destino.startswith("/") or destino.startswith("//") or "\\" in destino:
+        destino = url_for("raiz")
+    return redirect(destino)
 
 
 @bp.get("/cuenta/clave")
@@ -85,5 +114,5 @@ def cambiar_clave_post():
         flash(str(exc), "error")
         return render_template("cuenta/clave.html", obligatorio=obligatorio), 400
     usuario["debe_cambiar_clave"] = False
-    flash("Contraseña actualizada.", "ok")
+    flash(_("Contraseña actualizada."), "ok")
     return _a_su_panel(usuario)

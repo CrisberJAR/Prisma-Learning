@@ -1,23 +1,23 @@
 {% extends "estudiante/base.html" %}
-{% block title %}Mi mochila · Prisma{% endblock %}
+{% block title %}{{ _("Mi mochila") }} · Prisma{% endblock %}
 {% block contenido %}
 <section class="glass caja">
-  <h1>Mi mochila</h1>
-  <p class="mut">Materias en las que estás inscrito. Solo ves lo que el docente ya publicó.</p>
+  <h1>{{ _("Mi mochila") }}</h1>
+  <p class="mut">{{ _("Materias en las que estás inscrito. Solo ves lo que el docente ya publicó.") }}</p>
 </section>
 {% if not cursos %}
 <div class="empty glass caja">
   <div class="o"></div>
-  <b>Aún no tienes cursos</b>
-  Pide a tu docente que te inscriba.
+  <b>{{ _("Aún no tienes cursos") }}</b>
+  {{ _("Pide a tu docente que te inscriba.") }}
 </div>
 {% endif %}
 {% for c in cursos %}
   <article class="glass caja">
     <h2>{{ c.nombre_curso }}</h2>
-    {% if c.nivel_educativo_etiqueta %}<p class="mut">{{ c.nivel_educativo_etiqueta }}</p>{% endif %}
+    {% if c.nivel_educativo_etiqueta %}<p class="mut">{{ _(c.nivel_educativo_etiqueta) }}</p>{% endif %}
     {% if c.descripcion %}<p class="mut">{{ c.descripcion }}</p>{% endif %}
-    <h3>Sesiones publicadas</h3>
+    <h3>{{ _("Sesiones publicadas") }}</h3>
     {% if c.sesiones %}
       <div class="tarjetas">
         {% for s in c.sesiones %}
@@ -28,7 +28,7 @@
         {% endfor %}
       </div>
     {% else %}
-      <p class="mut">Todavía no hay sesiones publicadas.</p>
+      <p class="mut">{{ _("Todavía no hay sesiones publicadas.") }}</p>
     {% endif %}
   </article>
 {% endfor %}

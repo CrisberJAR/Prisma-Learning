@@ -1,4 +1,8 @@
 (function () {
+  // Traducción de la interfaz (templates/_i18n_js.html); sin catálogo devuelve el español.
+  var t = window.t || function (s, v) {
+    return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in v ? v[k] : m; }) : s;
+  };
   function bionic(el) {
     el.innerHTML = el.textContent.replace(/\S+/g, function (w) {
       var n = Math.max(1, Math.ceil(w.length * 0.4));
@@ -29,7 +33,7 @@
 
   function agregar(quien, texto) {
     var p = document.createElement("div");
-    p.className = "msg" + (quien === "Tú" ? " u" : "");
+    p.className = "msg" + (quien === "yo" ? " u" : "");
     p.appendChild(document.createTextNode(texto));
     log.appendChild(p);
     log.scrollTop = log.scrollHeight;
@@ -40,11 +44,11 @@
     ev.preventDefault();
     var q = (pregunta.value || "").trim();
     if (!q) return;
-    agregar("Tú", q);
+    agregar("yo", q);
     pregunta.value = "";
-    estado.textContent = "El tutor está escribiendo…";
+    estado.textContent = t("El tutor está escribiendo…");
     log.setAttribute("aria-busy", "true");
-    var nodo = agregar("Tutor", "");
+    var nodo = agregar("tutor", "");
     fetch("/chat/" + sesionId, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
@@ -73,7 +77,7 @@
               return;
             }
             if (evento === "done") {
-              estado.textContent = "Respuesta lista. Es una IA y puede equivocarse.";
+              estado.textContent = t("Respuesta lista. Es una IA y puede equivocarse.");
               log.setAttribute("aria-busy", "false");
               return;
             }
@@ -89,7 +93,7 @@
       }
       return leer();
     }).catch(function () {
-      estado.textContent = "El tutor requiere conexión a internet.";
+      estado.textContent = t("El tutor requiere conexión a internet.");
       log.setAttribute("aria-busy", "false");
     });
   });
@@ -97,7 +101,7 @@
   document.getElementById("btn-duda").addEventListener("click", function () {
     var q = (pregunta.value || "").trim();
     if (!q) {
-      estado.textContent = "Escribe la duda antes de enviarla.";
+      estado.textContent = t("Escribe la duda antes de enviarla.");
       return;
     }
     fetch("/chat/" + sesionId + "/duda", {
@@ -105,7 +109,7 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pregunta: q }),
     }).then(function (r) { return r.json(); }).then(function (j) {
-      estado.textContent = j.mensaje || j.error || "Listo.";
+      estado.textContent = j.mensaje || j.error || t("Listo.");
     });
   });
 
@@ -113,22 +117,23 @@
   document.getElementById("btn-voz").addEventListener("click", function () {
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      estado.textContent = "Tu navegador no permite dictado.";
+      estado.textContent = t("Tu navegador no permite dictado.");
       return;
     }
     var btnVoz = document.getElementById("btn-voz");
     rec = rec || new SR();
-    rec.lang = "es-PE";
+    // Dicta en el idioma de la interfaz: es en el que la persona escribe.
+    rec.lang = { es: "es-PE", en: "en-US", pt: "pt-BR", fr: "fr-FR" }[window.PRISMA_IDIOMA] || "es-PE";
     rec.onresult = function (e) {
       pregunta.value = (pregunta.value + " " + e.results[0][0].transcript).trim();
     };
     rec.onend = function () {
       if (btnVoz) btnVoz.setAttribute("aria-pressed", "false");
-      estado.textContent = "Dictado listo.";
+      estado.textContent = t("Dictado listo.");
     };
     rec.start();
     if (btnVoz) btnVoz.setAttribute("aria-pressed", "true");
-    estado.textContent = "Escuchando…";
+    estado.textContent = t("Escuchando…");
   });
 
   if (cajaTts) {
@@ -138,35 +143,35 @@
       if (ev.target.closest("[data-dua-parar]")) {
         tts.parar();
         setTtsEstado("idle");
-        estado.textContent = "Lectura detenida.";
+        estado.textContent = t("Lectura detenida.");
         return;
       }
       if (ev.target.closest("[data-dua-pausar]")) {
         if (tts.pausar()) {
           setTtsEstado("paused");
-          estado.textContent = "Pausado. Pulsa Continuar para seguir donde lo dejaste.";
+          estado.textContent = t("Pausado. Pulsa Continuar para seguir donde lo dejaste.");
         }
         return;
       }
       if (ev.target.closest("[data-dua-continuar]")) {
         if (tts.continuar()) {
           setTtsEstado("playing");
-          estado.textContent = "Reproduciendo…";
+          estado.textContent = t("Reproduciendo…");
         }
         return;
       }
       if (!ev.target.closest("[data-dua-hablar]")) return;
       var texto = textoUltimaRespuesta();
       if (!texto) {
-        estado.textContent = "Aún no hay respuesta del tutor para escuchar.";
+        estado.textContent = t("Aún no hay respuesta del tutor para escuchar.");
         return;
       }
       setTtsEstado("playing");
       tts.hablar(texto, "es-PE", function () {
         setTtsEstado("idle");
-        estado.textContent = "Lectura terminada.";
+        estado.textContent = t("Lectura terminada.");
       });
-      estado.textContent = "Reproduciendo la última respuesta…";
+      estado.textContent = t("Reproduciendo la última respuesta…");
     });
   }
 })();

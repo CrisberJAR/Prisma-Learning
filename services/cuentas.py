@@ -2,6 +2,7 @@
 import secrets
 
 from services.supabase_client import cliente_aislado, get_service_client
+from services.i18n import _
 
 LARGO_MINIMO = 8
 
@@ -51,7 +52,7 @@ def marcar_debe_cambiar(user_id: str, valor: bool) -> None:
         if "debe_cambiar_clave" in str(exc):
             if not valor:
                 return  # Sin la columna no hay marca que quitar.
-            raise ValueError("Falta ejecutar supabase/004_fase1.sql en el editor SQL de Supabase.") from exc
+            raise ValueError(_("Falta ejecutar supabase/004_fase1.sql en el editor SQL de Supabase.")) from exc
         raise
 
 
@@ -64,17 +65,17 @@ def restablecer_clave(user_id: str) -> str:
 
 def cambiar_clave(usuario: dict, actual: str, nueva: str, confirmar: str) -> None:
     if not actual:
-        raise ClaveInvalida("Escribe tu contraseña actual.")
+        raise ClaveInvalida(_("Escribe tu contraseña actual."))
     if len(nueva or "") < LARGO_MINIMO:
-        raise ClaveInvalida(f"La nueva contraseña debe tener al menos {LARGO_MINIMO} caracteres.")
+        raise ClaveInvalida(_("La nueva contraseña debe tener al menos {n} caracteres.", n=LARGO_MINIMO))
     if nueva != confirmar:
-        raise ClaveInvalida("La confirmación no coincide con la nueva contraseña.")
+        raise ClaveInvalida(_("La confirmación no coincide con la nueva contraseña."))
     if nueva == actual:
-        raise ClaveInvalida("La nueva contraseña debe ser distinta de la actual.")
+        raise ClaveInvalida(_("La nueva contraseña debe ser distinta de la actual."))
     try:
         iniciar_sesion(usuario["email"], actual)
     except Exception as exc:
-        raise ClaveInvalida("La contraseña actual no es correcta.") from exc
+        raise ClaveInvalida(_("La contraseña actual no es correcta.")) from exc
     try:
         asignar_clave(usuario["id"], nueva, debe_cambiar=False)
     except ValueError:
@@ -83,6 +84,6 @@ def cambiar_clave(usuario: dict, actual: str, nueva: str, confirmar: str) -> Non
         texto = str(exc).lower()
         if "weak" in texto or "password" in texto:
             raise ClaveInvalida(
-                "Supabase rechazó la contraseña por débil. Usa letras, números y algún símbolo."
+                _("Supabase rechazó la contraseña por débil. Usa letras, números y algún símbolo.")
             ) from exc
         raise

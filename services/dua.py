@@ -5,6 +5,7 @@ import logging
 import re
 
 from services import ai_router, cache_ia
+from services.i18n import _
 
 log = logging.getLogger(__name__)
 
@@ -277,7 +278,7 @@ def adaptar_a_lengua(texto: str, idioma_pedido: str) -> dict:
     if len(pedido) < 2:
         return {
             "valido": False,
-            "error": MSG_IDIOMA_INVALIDO,
+            "error": _(MSG_IDIOMA_INVALIDO),
             "texto": origen,
             "nombre": "",
             "codigo": "",
@@ -287,7 +288,7 @@ def adaptar_a_lengua(texto: str, idioma_pedido: str) -> dict:
     if not chequeo.get("valido"):
         return {
             "valido": False,
-            "error": MSG_IDIOMA_INVALIDO,
+            "error": _(MSG_IDIOMA_INVALIDO),
             "texto": origen,
             "nombre": pedido,
             "codigo": "",

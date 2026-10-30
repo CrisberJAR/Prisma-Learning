@@ -9,6 +9,7 @@ import requests
 
 from config import settings
 from services import ai_router, cache_ia
+from services.i18n import _
 
 log = logging.getLogger(__name__)
 
@@ -265,13 +266,13 @@ def para_sesion(sesion: dict) -> dict:
         }
     prompt_llm = prompt_desde_texto(texto, nivel_educativo=nivel, titulo=titulo)
     if len(prompt_llm) < 12:
-        return {"estado": "error", "url": "", "alt": alt, "prompt_ingles": "", "error": "No se pudo armar el prompt de la ilustración."}
+        return {"estado": "error", "url": "", "alt": alt, "prompt_ingles": "", "error": _("No se pudo armar el prompt de la ilustración.")}
     prompt = armar_prompt_imagen(prompt_llm, titulo, nivel)
     try:
         url = generar_imagen_educativa(prompt)
     except Exception as exc:
         log.error("No se pudo generar la ilustración con Cloudflare: %s", exc, exc_info=True)
-        return {"estado": "error", "url": "", "alt": alt, "prompt_ingles": prompt, "error": "No se pudo generar la ilustración."}
+        return {"estado": "error", "url": "", "alt": alt, "prompt_ingles": prompt, "error": _("No se pudo generar la ilustración.")}
     out = {"estado": "lista", "url": url, "alt": alt, "prompt_ingles": prompt}
     try:
         cache_ia.guardar(h, "imagen_educativa", "es", VERSION, out)
