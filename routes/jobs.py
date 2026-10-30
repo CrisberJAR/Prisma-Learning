@@ -1,6 +1,9 @@
-from flask import Blueprint, g, jsonify
+import hmac
 
-from services import jobs
+from flask import Blueprint, g, jsonify, request
+
+from config import settings
+from services import jobs, mantenimiento
 from services.auth import requiere_rol
 from services.i18n import _
 
@@ -14,6 +17,8 @@ def ver_job(job_id):
     job = jobs.docente_puede_ver_job(str(job_id), g.usuario["id"])
     if job is None:
         return jsonify({"error": _("Job no encontrado")}), 404
+    if settings.SIN_WORKER:
+        job = jobs.atender_sin_worker(job)
     return jsonify(
         {
             "id": job["id"],
@@ -25,3 +30,12 @@ def ver_job(job_id):
             "intentos": job.get("intentos") or 0,
         }
     )
+
+
+@bp.get("/cron/mantenimiento")
+def cron_mantenimiento():
+    """Tareas diarias sin proceso permanente (vercel.json). Solo con el secreto: gasta IA y borra datos."""
+    esperado = f"Bearer {settings.CRON_SECRET}"
+    if not settings.CRON_SECRET or not hmac.compare_digest(request.headers.get("Authorization", ""), esperado):
+        return jsonify({"error": "No autorizado"}), 401
+    return jsonify(mantenimiento.tareas_diarias())

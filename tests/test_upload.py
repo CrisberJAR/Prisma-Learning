@@ -152,6 +152,55 @@ def test_previsualizar_desde_titulo_exige_tema():
         pass
 
 
+@pytest.fixture(autouse=True)
+def _previas_en_memoria(monkeypatch):
+    previas = {}
+
+    def guardar(curso, clave, datos, meta):
+        previas[(curso, clave)] = (datos, {**meta, "con_archivo": bool(datos)})
+
+    def leer(curso, clave):
+        return previas[(curso, clave)]
+
+    monkeypatch.setattr(materiales.storage, "guardar_previa", guardar)
+    monkeypatch.setattr(materiales.storage, "leer_previa", leer)
+    monkeypatch.setattr(materiales.storage, "borrar_previa", lambda curso, clave: previas.pop((curso, clave), None))
+    return previas
+
+
+def test_clave_de_previa_no_puede_salir_de_su_carpeta():
+    for mala in ("../../otro", "a/b", "", "x" * 200):
+        with pytest.raises(materiales.MaterialInvalido):
+            materiales._leer_previa(CURSO, mala)
+
+
+def test_confirmar_borra_la_previa(monkeypatch, _previas_en_memoria):
+    monkeypatch.setattr(materiales, "get_service_client", lambda: _DbFalsa())
+    monkeypatch.setattr("services.package_builder.guardar_paquete", lambda *a, **k: None)
+    monkeypatch.setattr("services.package_builder.generar", lambda *a, **k: {"contenido": {}, "generado_por_ia": False})
+    materiales._guardar_previa("h2", b"", {"curso_id": CURSO, "content_type": "text/plain", "tipo": "tema"})
+    materiales.confirmar_material(CURSO, "T", "texto de clase", f"{CURSO}/tema-h2", "h2", "tema")
+    assert _previas_en_memoria == {}
+
+
+def test_subida_directa_solo_lee_rutas_de_su_curso(monkeypatch):
+    borradas = []
+    monkeypatch.setattr(materiales.storage, "download_bytes", lambda ruta: b"PK")
+    monkeypatch.setattr(materiales.storage, "remove", lambda rutas: borradas.extend(rutas))
+    buena = f"previas/{CURSO}/subida-{'a' * 32}.pdf"
+    assert materiales.leer_subida(CURSO, buena) == b"PK" and borradas == [buena]
+    for mala in (f"previas/otro/subida-{'a' * 32}.pdf", f"{CURSO}/secreto.pdf", f"previas/{CURSO}/../x.pdf", ""):
+        with pytest.raises(materiales.MaterialInvalido):
+            materiales.leer_subida(CURSO, mala)
+
+
+def test_preparar_subida_rechaza_tipos_no_permitidos(monkeypatch):
+    monkeypatch.setattr(materiales.storage, "url_subida_directa", lambda c, e: {"url": "u", "ruta": "r"})
+    assert materiales.preparar_subida(CURSO, "a.pdf")["ruta"] == "r"
+    with pytest.raises(materiales.MaterialInvalido):
+        materiales.preparar_subida(CURSO, "a.exe")
+
+
 def test_confirmar_material_crea_revision(monkeypatch):
     db = _DbFalsa()
     monkeypatch.setattr(materiales, "get_service_client", lambda: db)

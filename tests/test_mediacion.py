@@ -108,7 +108,7 @@ def test_plantillas_y_js_separan_roles():
     docente = (root / "templates" / "docente" / "sesion.html").read_text(encoding="utf-8")
     estudiante = (root / "templates" / "estudiante" / "sesion.html").read_text(encoding="utf-8")
     parcial = (root / "templates" / "_mediacion.html").read_text(encoding="utf-8")
-    js = (root / "static" / "js" / "mediacion.js").read_text(encoding="utf-8")
+    js = (root / "public" / "static" / "js" / "mediacion.js").read_text(encoding="utf-8")
     assert '{% include "_mediacion.html" %}' in docente
     assert '{% include "_mediacion.html" %}' in estudiante
     assert "mediacion.js" in docente and "mediacion.js" in estudiante

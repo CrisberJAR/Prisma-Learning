@@ -3,8 +3,14 @@
 El bucket es privado: el navegador nunca recibe la ruta interna, solo URLs firmadas
 con vencimiento que genera el backend cuando hacen falta.
 """
+import json
+import uuid
+from datetime import datetime, timedelta, timezone
+
 from config import settings
 from services.supabase_client import get_service_client
+
+PREVIAS = "previas"
 
 
 def ensure_bucket() -> None:
@@ -48,3 +54,51 @@ def remove(rutas: list[str]) -> None:
         get_service_client().storage.from_(settings.STORAGE_BUCKET).remove(rutas)
     except Exception:
         pass
+
+
+# ---------------------------------------------------------------------------
+# Vistas previas: en servidores sin disco compartido, la petición que confirma puede
+# caer en otra instancia distinta de la que extrajo, así que no pueden vivir en /tmp.
+# ---------------------------------------------------------------------------
+def guardar_previa(curso_id: str, clave: str, datos: bytes, meta: dict) -> None:
+    base = f"{PREVIAS}/{curso_id}/{clave}"
+    if datos:
+        upload_bytes(f"{base}.bin", datos, "application/octet-stream")
+    upload_bytes(f"{base}.json", json.dumps({**meta, "con_archivo": bool(datos)}).encode("utf-8"), "application/json")
+
+
+def leer_previa(curso_id: str, clave: str) -> tuple[bytes, dict]:
+    """Lanza una excepción de Storage si ya no existe."""
+    base = f"{PREVIAS}/{curso_id}/{clave}"
+    meta = json.loads(download_bytes(f"{base}.json"))
+    return (download_bytes(f"{base}.bin") if meta.get("con_archivo") else b""), meta
+
+
+def borrar_previa(curso_id: str, clave: str) -> None:
+    base = f"{PREVIAS}/{curso_id}/{clave}"
+    remove([f"{base}.bin", f"{base}.json"])
+
+
+def url_subida_directa(curso_id: str, ext: str) -> dict:
+    """URL firmada para que el navegador suba a Storage sin pasar por el servidor.
+
+    Vercel rechaza peticiones de más de 4,5 MB; así caben los archivos de hasta MAX_UPLOAD_MB.
+    """
+    ruta = f"{PREVIAS}/{curso_id}/subida-{uuid.uuid4().hex}{ext}"
+    res = get_service_client().storage.from_(settings.STORAGE_BUCKET).create_signed_upload_url(ruta)
+    return {"url": res["signed_url"], "ruta": ruta}
+
+
+def purgar_previas(horas: int = 24) -> int:
+    """Borra las vistas previas y subidas que nadie confirmó. Devuelve cuántos archivos borró."""
+    bucket = get_service_client().storage.from_(settings.STORAGE_BUCKET)
+    limite = datetime.now(timezone.utc) - timedelta(hours=horas)
+    viejos = []
+    for curso in bucket.list(PREVIAS, {"limit": 1000}):
+        carpeta = f"{PREVIAS}/{curso['name']}"
+        for f in bucket.list(carpeta, {"limit": 1000}):
+            creado = f.get("created_at")
+            if creado and datetime.fromisoformat(creado.replace("Z", "+00:00")) < limite:
+                viejos.append(f"{carpeta}/{f['name']}")
+    remove(viejos)
+    return len(viejos)

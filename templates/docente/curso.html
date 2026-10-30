@@ -82,6 +82,8 @@
         "creando": _("Creando la clase a partir del título… puede tardar un poco."),
         "servidor": _("El servidor no pudo completar la extracción."),
         "grande": _("El archivo supera el tamaño máximo permitido."),
+        "subiendo": _("Subiendo el archivo…"),
+        "noSubio": _("No se pudo subir el archivo. Revisa tu conexión e inténtalo de nuevo."),
         "caduco": _("La sesión caducó. Vuelve a entrar."),
         "sinArchivo": _("Sin archivo"),
         "archivo": _("Archivo"),
@@ -96,6 +98,27 @@
       var base = location.pathname.replace(/\/$/, "");
       var urlPreview = base + "/materiales/preview_json";
       var urlConfirmar = base + "/materiales/confirmar";
+      var urlSubida = base + "/materiales/subida";
+      var maxBytes = {{ max_upload_mb }} * 1024 * 1024;
+      function jsonDe(r) {
+        return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || T.noSubio); return j; });
+      }
+      // El archivo va directo a Storage: el servidor solo admite peticiones pequeñas (4,5 MB en Vercel).
+      function subir(archivo) {
+        if (archivo.size > maxBytes) return Promise.reject(new Error(T.grande));
+        var fd = new FormData();
+        fd.append("nombre", archivo.name);
+        preview.innerHTML = '<p class="aviso">' + esc(T.subiendo) + "</p>";
+        return fetch(urlSubida, { method: "POST", body: fd, credentials: "same-origin" })
+          .then(jsonDe)
+          .then(function (destino) {
+            return fetch(destino.url, { method: "PUT", body: archivo, headers: { "Content-Type": archivo.type || "application/octet-stream" } })
+              .then(function (r) {
+                if (!r.ok) throw new Error(r.status === 413 ? T.grande : T.noSubio);
+                return destino.ruta;
+              }, function () { throw new Error(T.noSubio); });
+          });
+      }
       function esc(s) {
         return String(s || "")
           .replace(/&/g, "&amp;")
@@ -115,13 +138,19 @@
           mostrarError(T.falta);
           return;
         }
-        var fd = new FormData();
-        if (archivo) fd.append("archivo", archivo);
-        fd.append("titulo", titulo);
-        fd.append("idioma", document.getElementById("idioma").value || "es");
         preview.hidden = false;
-        preview.innerHTML = '<p class="aviso">' + esc(archivo ? T.leyendo : T.creando) + "</p>";
-        fetch(urlPreview, { method: "POST", body: fd, credentials: "same-origin" })
+        (archivo ? subir(archivo) : Promise.resolve(null))
+          .then(function (ruta) {
+            var fd = new FormData();
+            if (ruta) {
+              fd.append("subida", ruta);
+              fd.append("nombre", archivo.name);
+            }
+            fd.append("titulo", titulo);
+            fd.append("idioma", document.getElementById("idioma").value || "es");
+            preview.innerHTML = '<p class="aviso">' + esc(archivo ? T.leyendo : T.creando) + "</p>";
+            return fetch(urlPreview, { method: "POST", body: fd, credentials: "same-origin" });
+          })
           .then(function (r) {
             var tipo = (r.headers.get("content-type") || "").toLowerCase();
             if (tipo.indexOf("application/json") >= 0) {
@@ -165,7 +194,7 @@
             });
           })
           .catch(function (e) {
-            mostrarError(String(e));
+            mostrarError(e && e.message ? e.message : String(e));
           });
       });
     })();

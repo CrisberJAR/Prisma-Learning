@@ -528,5 +528,7 @@
  "Original": "Original",
  "Quitar todas": "Remover todas",
  "Quitar {nombre}": "Remover {nombre}",
- "Sin adaptaciones: así se ve el texto original.": "Sem adaptações: assim é o texto original."
+ "Sin adaptaciones: así se ve el texto original.": "Sem adaptações: assim é o texto original.",
+ "Subiendo el archivo…": "Enviando o arquivo…",
+ "No se pudo subir el archivo. Revisa tu conexión e inténtalo de nuevo.": "Não foi possível enviar o arquivo. Verifique sua conexão e tente novamente."
 }

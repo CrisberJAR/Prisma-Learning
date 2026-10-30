@@ -1,0 +1,12 @@
+.env
+.env.*
+.venv/
+instance/
+uploads/
+tests/
+scripts/
+Dockerfile
+Procfile
+.dockerignore
+pytest.ini
+requirements-dev.txt

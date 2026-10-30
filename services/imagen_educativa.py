@@ -282,7 +282,8 @@ def para_sesion(sesion: dict) -> dict:
 
 
 def generar_en_fondo(sesion: dict) -> None:
-    if not (sesion.get("texto_extraido") or "").strip():
+    # Sin proceso permanente el hilo se congelaría al responder: se genera en la primera visita.
+    if settings.SIN_WORKER or not (sesion.get("texto_extraido") or "").strip():
         return
 
     def _run() -> None:

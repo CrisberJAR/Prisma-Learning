@@ -5,6 +5,7 @@ import logging
 import re
 import threading
 
+from config import settings
 from services import ai_router, cache_ia, i18n, imagen_educativa
 
 log = logging.getLogger(__name__)
@@ -168,7 +169,8 @@ def para_sesion(sesion: dict, idioma: str = "Español") -> dict:
 
 
 def generar_en_fondo(sesion: dict) -> None:
-    if not (sesion.get("texto_extraido") or "").strip():
+    # Sin proceso permanente el hilo se congelaría al responder: se genera en la primera visita.
+    if settings.SIN_WORKER or not (sesion.get("texto_extraido") or "").strip():
         return
 
     def _run() -> None:

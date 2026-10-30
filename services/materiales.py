@@ -1,15 +1,14 @@
 """Alta de material de una sesión: validación, hash, subida y creación del job de extracción."""
 import hashlib
-import json
 import os
-import tempfile
-from pathlib import Path
+import re
 
 from services import jobs, storage
 from services.supabase_client import get_service_client
 from services.i18n import _
 
-_PREVIA_DIR = Path(tempfile.gettempdir()) / "prisma-previas"
+# La clave llega del formulario y forma parte de una ruta de Storage.
+_CLAVE_SEGURA = re.compile(r"^[\w-]{1,128}$")
 
 # Extensión -> (tipo lógico usado por el extractor, content-type para Storage)
 TIPOS_PERMITIDOS = {
@@ -143,17 +142,34 @@ def _nivel_etiqueta(curso_id: str) -> str:
 
 
 def _guardar_previa(hash_contenido: str, datos: bytes, meta: dict) -> None:
-    _PREVIA_DIR.mkdir(parents=True, exist_ok=True)
-    (_PREVIA_DIR / f"{hash_contenido}.bin").write_bytes(datos)
-    (_PREVIA_DIR / f"{hash_contenido}.json").write_text(json.dumps(meta), encoding="utf-8")
+    storage.guardar_previa(meta["curso_id"], hash_contenido, datos, meta)
 
 
-def _leer_previa(hash_contenido: str) -> tuple[bytes, dict]:
-    binario = _PREVIA_DIR / f"{hash_contenido}.bin"
-    meta = _PREVIA_DIR / f"{hash_contenido}.json"
-    if not binario.is_file() or not meta.is_file():
+def _leer_previa(curso_id: str, hash_contenido: str) -> tuple[bytes, dict]:
+    if not _CLAVE_SEGURA.match(hash_contenido or ""):
         raise MaterialInvalido(_("La vista previa expiró. Vuelve a extraer el archivo."))
-    return binario.read_bytes(), json.loads(meta.read_text(encoding="utf-8"))
+    try:
+        return storage.leer_previa(curso_id, hash_contenido)
+    except Exception as exc:
+        raise MaterialInvalido(_("La vista previa expiró. Vuelve a extraer el archivo.")) from exc
+
+
+def preparar_subida(curso_id: str, nombre_archivo: str) -> dict:
+    """Valida el tipo y devuelve {url, ruta} para que el navegador suba el archivo a Storage."""
+    ext, _tipo, _ct = clasificar_archivo(nombre_archivo)
+    return storage.url_subida_directa(curso_id, ext)
+
+
+def leer_subida(curso_id: str, ruta: str) -> bytes:
+    """Baja el archivo que subió el navegador y lo retira de la carpeta temporal."""
+    if not re.fullmatch(rf"{storage.PREVIAS}/{re.escape(curso_id)}/subida-[0-9a-f]{{32}}\.\w+", ruta or ""):
+        raise MaterialInvalido(_("La vista previa no corresponde a este curso."))
+    try:
+        datos = storage.download_bytes(ruta)
+    except Exception as exc:
+        raise MaterialInvalido(_("La vista previa expiró. Vuelve a extraer el archivo.")) from exc
+    storage.remove([ruta])
+    return datos
 
 
 def previsualizar_material(curso_id: str, titulo: str, nombre_archivo: str, datos: bytes, idioma: str = "es") -> dict:
@@ -254,7 +270,7 @@ def confirmar_material(
     tipos_ok = {t for t, _ in TIPOS_PERMITIDOS.values()} | {TIPO_TEMA}
     if tipo not in tipos_ok:
         raise MaterialInvalido(_("Tipo de archivo no permitido."))
-    datos, meta = _leer_previa(hash_contenido)
+    datos, meta = _leer_previa(curso_id, hash_contenido)
     if meta.get("curso_id") != curso_id:
         raise MaterialInvalido(_("La vista previa no corresponde a este curso."))
     archivo_url = None
@@ -284,6 +300,7 @@ def confirmar_material(
         .execute()
         .data[0]
     )
+    storage.borrar_previa(curso_id, hash_contenido)
     from services import package_builder
 
     try:

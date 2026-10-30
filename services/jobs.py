@@ -1,4 +1,8 @@
-"""Cola de jobs: creación, ejecución, reintentos y worker en segundo plano."""
+"""Cola de jobs: creación, ejecución, reintentos y worker en segundo plano.
+
+Con un proceso permanente (Docker, Gunicorn) los ejecuta el worker. En Vercel no existe: la consulta
+de estado del navegador ejecuta el job (atender_sin_worker) y el cron diario recoge lo que quede.
+"""
 import logging
 import threading
 import time
@@ -10,6 +14,7 @@ log = logging.getLogger(__name__)
 ESTADOS_ACTIVOS = ("queued", "running")
 MAX_INTENTOS = 3
 HILOS_WORKER = 2
+MINUTOS_COLGADO = 6  # Una función de Vercel dura como máximo 5 minutos.
 
 _iniciado = False
 _parar = threading.Event()
@@ -131,6 +136,40 @@ def iniciar_worker(hilos: int = HILOS_WORKER) -> None:
             threading.Thread(target=_bucle, name=f"jobs-worker-{i}", daemon=True).start()
         _iniciado = True
         log.info("Worker de jobs iniciado (%s hilos)", hilos)
+
+
+def _colgado(job: dict) -> bool:
+    """En running desde hace más de lo que permite una función: la plataforma la cortó."""
+    from datetime import datetime, timedelta, timezone
+
+    try:
+        inicio = datetime.fromisoformat(str(job.get("iniciado_en")).replace("Z", "+00:00"))
+    except ValueError:
+        return True
+    return datetime.now(timezone.utc) - inicio > timedelta(minutes=MINUTOS_COLGADO)
+
+
+def atender_sin_worker(job: dict) -> dict:
+    """Sin worker, la consulta de estado hace el trabajo. reclamar() evita ejecutarlo dos veces."""
+    if job.get("estado") == "running" and _colgado(job):
+        _actualizar_job(job["id"], estado="queued", error="recuperado tras corte de la plataforma")
+        job = {**job, "estado": "queued"}
+    if job.get("estado") == "queued" and reclamar(job["id"]):
+        return ejecutar_job(job)
+    return job
+
+
+def procesar_cola(segundos: int = 240) -> int:
+    """Ejecuta jobs en cola hasta agotar el tiempo (cron). Devuelve cuántos atendió."""
+    fin = time.monotonic() + segundos
+    atendidos = 0
+    while time.monotonic() < fin:
+        pendientes = jobs_en_cola(limite=1)
+        if not pendientes:
+            break
+        atender_sin_worker(pendientes[0])
+        atendidos += 1
+    return atendidos
 
 
 def _bucle() -> None:

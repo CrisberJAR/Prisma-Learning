@@ -5,4 +5,4 @@ __pycache__/
 .pytest_cache/
 instance/
 uploads/
-static/img-edu/*
+public/static/img-edu/*

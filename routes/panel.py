@@ -2,6 +2,7 @@ import json
 
 from flask import Blueprint, flash, g, jsonify, redirect, render_template, request, url_for
 
+from config import settings
 from services import analitica, chat_service, contenido, cuentas, dua, ejercicios, evaluacion, imagen_educativa, jobs, materiales, mediacion, package_builder
 from services import cursos as svc
 from services.auth import requiere_pagina, requiere_rol
@@ -97,6 +98,7 @@ def _pagina_curso(curso_id: str, previa: dict | None = None, codigo: int = 200, 
         previa=previa,
         niveles_cine=svc.NIVELES_CINE,
         credencial=credencial,
+        max_upload_mb=settings.MAX_UPLOAD_MB,
     )
     return html, codigo
 
@@ -179,25 +181,39 @@ def confirmar_material(curso_id):
     return redirect(url_for("panel.sesion", sesion_id=sesion["id"]))
 
 
+@bp.post("/cursos/<uuid:curso_id>/materiales/subida")
+@requiere_rol("docente")
+def preparar_subida(curso_id):
+    """API: URL firmada para subir el archivo directamente a Storage desde el navegador."""
+    curso_id = str(curso_id)
+    if not materiales.docente_es_dueno(curso_id, g.usuario["id"]):
+        return jsonify({"error": _("El curso no existe o no te pertenece")}), 404
+    try:
+        return jsonify(materiales.preparar_subida(curso_id, request.form.get("nombre", ""))), 200
+    except materiales.MaterialInvalido as exc:
+        return jsonify({"error": str(exc)}), 400
+
+
 @bp.post("/cursos/<uuid:curso_id>/materiales/preview_json")
 @requiere_rol("docente")
 def preview_material_json(curso_id):
-    """API: recibe archivo y devuelve la previsualización (JSON) sin crear la sesión."""
+    """API: recibe el archivo (o la ruta donde lo subió el navegador) y devuelve la previsualización sin crear la sesión."""
     curso_id = str(curso_id)
     if not materiales.docente_es_dueno(curso_id, g.usuario["id"]):
         return jsonify({"error": _("El curso no existe o no te pertenece")}), 404
     archivo = request.files.get("archivo")
+    subida = request.form.get("subida")
     titulo = (request.form.get("titulo") or "").strip()
     tiene_archivo = archivo is not None and bool(archivo.filename)
-    if not tiene_archivo and not titulo:
+    if not tiene_archivo and not subida and not titulo:
         return jsonify({"error": _("Escribe un título o sube un archivo")}), 400
     try:
-        if tiene_archivo:
+        if subida or tiene_archivo:
             previa = materiales.previsualizar_material(
                 curso_id=curso_id,
                 titulo=titulo,
-                nombre_archivo=archivo.filename,
-                datos=archivo.read(),
+                nombre_archivo=request.form.get("nombre", "") if subida else archivo.filename,
+                datos=materiales.leer_subida(curso_id, subida) if subida else archivo.read(),
                 idioma=request.form.get("idioma", "es"),
             )
         else:

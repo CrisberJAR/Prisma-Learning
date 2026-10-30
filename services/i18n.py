@@ -111,7 +111,7 @@ def claves_en(texto: str) -> list[str]:
 def claves_js() -> frozenset[str]:
     """Textos que usan los scripts del navegador: solo esos viajan a la página."""
     claves: set[str] = set()
-    for f in (RAIZ / "static" / "js").glob("*.js"):
+    for f in (RAIZ / "public" / "static" / "js").glob("*.js"):
         claves.update(claves_en(f.read_text(encoding="utf-8")))
     return frozenset(claves)
 
@@ -135,7 +135,7 @@ def todas_las_claves() -> set[str]:
     """Todo lo que debe tener cada catálogo (lo usan scripts/i18n_extraer.py y el test)."""
     claves = claves_dinamicas()
     fuentes = [*(RAIZ / "templates").rglob("*.html"), *(RAIZ / "routes").glob("*.py"),
-               *(RAIZ / "services").glob("*.py"), *(RAIZ / "static" / "js").glob("*.js"), RAIZ / "app.py"]
+               *(RAIZ / "services").glob("*.py"), *(RAIZ / "public" / "static" / "js").glob("*.js"), RAIZ / "app.py"]
     for f in fuentes:
         if f.name == "i18n.py":
             continue  # Sus ejemplos del docstring no son textos de la interfaz.

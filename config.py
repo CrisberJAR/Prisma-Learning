@@ -22,8 +22,12 @@ class Settings:
         "@cf/black-forest-labs/flux-1-schnell",
     )
     FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "")
-    # "produccion" activa cookie Secure, ProxyFix y exige FLASK_SECRET_KEY (Procfile y Dockerfile lo fijan).
-    ENTORNO = os.getenv("ENTORNO", "desarrollo").strip().lower()
+    # En Vercel no hay proceso permanente: sin worker ni hilos en segundo plano (ver services/jobs.py).
+    SIN_WORKER = bool(os.getenv("VERCEL"))
+    # "produccion" activa cookie Secure, ProxyFix y exige FLASK_SECRET_KEY (Procfile, Dockerfile y Vercel la activan).
+    ENTORNO = os.getenv("ENTORNO", "produccion" if SIN_WORKER else "desarrollo").strip().lower()
+    # Vercel lo envía como "Authorization: Bearer ..." al llamar a /cron/mantenimiento.
+    CRON_SECRET = os.getenv("CRON_SECRET", "")
 
     MODEL_TEXT_PRIMARY = os.getenv("MODEL_TEXT_PRIMARY", "")
     MODEL_TEXT_FALLBACK = os.getenv("MODEL_TEXT_FALLBACK", "")

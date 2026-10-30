@@ -22,7 +22,8 @@ def icono(nombre: str, clase: str = "") -> Markup:
 
 
 def create_app(con_worker: bool | None = None):
-    app = Flask(__name__)
+    # public/: Vercel sirve esta carpeta desde su CDN; en local y en Docker la sirve Flask en la misma URL.
+    app = Flask(__name__, static_folder="public/static", static_url_path="/static")
     produccion = settings.ENTORNO == "produccion"
     if produccion and not settings.FLASK_SECRET_KEY:
         # Con la clave de desarrollo cualquiera podría firmar cookies de sesión válidas.

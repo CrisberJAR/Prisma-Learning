@@ -28,6 +28,20 @@ def purgar_chat(dias: int | None = None) -> int:
     return len(borrados)
 
 
+def tareas_diarias() -> dict:
+    """Lo que hace el worker cuando no hay proceso permanente. Un fallo no impide las demás."""
+    from services import jobs, storage
+
+    resultado = {}
+    for nombre, tarea in (("chat", purgar_chat), ("previas", storage.purgar_previas), ("jobs", jobs.procesar_cola)):
+        try:
+            resultado[nombre] = tarea()
+        except Exception:
+            log.exception("Tarea diaria %s: falló", nombre)
+            resultado[nombre] = "error"
+    return resultado
+
+
 def quizas_purgar_chat() -> None:
     """Purga como máximo una vez al día. Un fallo se registra y no detiene el worker."""
     global _ultima
