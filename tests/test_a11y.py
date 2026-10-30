@@ -48,8 +48,21 @@ def test_offline_y_privacidad_saltar():
     assert 'href="#contenido"' in priv
 
 
-def test_health_ia():
+def test_health_ia(monkeypatch):
+    """El uso de IA solo lo ve un docente (antes era público)."""
+    assert create_app().test_client().get("/health/ia").status_code == 401
+    _como_docente(monkeypatch)
     resp = create_app().test_client().get("/health/ia")
     assert resp.status_code == 200
     data = resp.get_json()
     assert "llamadas" in data and "errores" in data
+
+
+def _como_docente(monkeypatch):
+    from flask import g
+
+    def fake():
+        g.usuario = {"id": "d1", "rol": "docente", "nombre": "Doc", "email": "d@x.com", "token": "t"}
+        return g.usuario
+
+    monkeypatch.setattr("services.auth.usuario_actual", fake)

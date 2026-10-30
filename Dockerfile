@@ -13,7 +13,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 ENTORNO=produccion
 EXPOSE 5000
 
 # Un worker: jobs y rate-limit viven en memoria. Timeout alto por el chat SSE.

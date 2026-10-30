@@ -2,6 +2,7 @@
 import logging
 import threading
 import time
+from services import mantenimiento
 from services.supabase_client import get_service_client
 
 log = logging.getLogger(__name__)
@@ -48,6 +49,24 @@ def jobs_en_cola(limite: int = 10) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Ejecución
 # ---------------------------------------------------------------------------
+def reclamar(job_id: str) -> bool:
+    """Pasa el job de queued a running solo si sigue en cola: un único hilo o proceso gana.
+
+    Sin esto, dos hilos del worker (o el worker y scripts/run_jobs.py) leían el mismo job
+    de la cola y lo ejecutaban dos veces: doble gasto de IA y paquetes duplicados.
+    """
+    filas = (
+        get_service_client()
+        .table("jobs")
+        .update({"estado": "running", "iniciado_en": _ahora()})
+        .eq("id", job_id)
+        .eq("estado", "queued")
+        .execute()
+        .data
+    )
+    return bool(filas)
+
+
 def _actualizar_job(job_id: str, **campos) -> None:
     get_service_client().table("jobs").update(campos).eq("id", job_id).execute()
 
@@ -117,10 +136,13 @@ def iniciar_worker(hilos: int = HILOS_WORKER) -> None:
 def _bucle() -> None:
     while not _parar.is_set():
         try:
+            mantenimiento.quizas_purgar_chat()
             pendientes = jobs_en_cola(limite=1)
             if not pendientes:
                 _parar.wait(2)
                 continue
+            if not reclamar(pendientes[0]["id"]):
+                continue  # Otro hilo lo tomó primero.
             ejecutar_job(pendientes[0])
         except Exception:
             log.exception("Worker: error al tomar un job")

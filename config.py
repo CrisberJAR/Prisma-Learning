@@ -22,6 +22,8 @@ class Settings:
         "@cf/black-forest-labs/flux-1-schnell",
     )
     FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "")
+    # "produccion" activa cookie Secure, ProxyFix y exige FLASK_SECRET_KEY (Procfile y Dockerfile lo fijan).
+    ENTORNO = os.getenv("ENTORNO", "desarrollo").strip().lower()
 
     MODEL_TEXT_PRIMARY = os.getenv("MODEL_TEXT_PRIMARY", "")
     MODEL_TEXT_FALLBACK = os.getenv("MODEL_TEXT_FALLBACK", "")
